@@ -373,7 +373,7 @@ void dt_rb_tree_add(DtRbTree* head, void* data, u64 hash) {
 }
 
 void* dt_rb_tree_get(DtRbTree* head, u64 hash) {
-
+    return dt_rb_node_get(head->root, hash);
 }
 
 void dt_rb_tree_remove(DtRbTree* head, u64 hash) {

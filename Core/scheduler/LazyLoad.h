@@ -9,7 +9,7 @@
 #define DT_LIB_LOAD(name) LoadLibrary(name)
 #define DT_LIB_GET(handle, name) GetProcAddress(handle, name)
 #define DT_LIB_CLOSE(handle) FreeLibrary(handle)
-#define DT_LIB_EXTENSION ".dll"
+#define DT_LIB_NAME(name) name ".dll"
 
 #define DT_EXPORT __declspec(dllexport)
 #else
@@ -18,15 +18,21 @@
 #define DT_LIB_LOAD(name) dlopen(name, RTLD_LAZY)
 #define DT_LIB_GET(handle, name) dlsym(handle, name)
 #define DT_LIB_CLOSE(handle) dlclose(handle)
-#define DT_LIB_EXTENSION ".so"
+#define DT_LIB_NAME(name) name ".so"
 
-#define DT_EXPORT __declspec(dllexport)
+#define DT_EXPORT
 #endif
 
+#define DT_MODULE_INITIALIZE dt_module_initialize
+#define DT_MODULE_INITIALIZE_STR "dt_module_initialize"
+
+#define DT_MODULE_DEINITIALIZE dt_module_deinitialize
+#define DT_MODULE_DEINITIALIZE_STR "dt_module_deinitialize"
+
 #define DT_DEFINE_MODULE(name, init, deinit)                                                       \
-    DT_EXPORT const char* module_name = name;                                                      \
-    DT_EXPORT void (*initialize)(DtEnvironment * env) = init;                                      \
-    DT_EXPORT void (*deinitialize)(DtEnvironment * env) = deinit;
+    DT_EXPORT const char* dt_module_name = name;                                                   \
+    DT_EXPORT void (*DT_MODULE_INITIALIZE)(DtEnvironment * env) = init;                            \
+    DT_EXPORT void (*DT_MODULE_DEINITIALIZE)(DtEnvironment * env) = deinit;
 
 // TODO: add comment
 typedef struct DtEnvironment DtEnvironment;
@@ -54,8 +60,13 @@ struct DtEnvironment {
     u16 drawers_count;
 };
 
+typedef void (*DtEnvironmentHandle)(DtEnvironment*);
+
 // TODO: comments
-void dt_load_module(DtEnvironment* env, const char* path);
+ModuleInfo* dt_module_load(DtEnvironment* env, const char* path);
+
+// TODO: comments
+void dt_module_unload(DtEnvironment* env, ModuleInfo* info);
 
 // TODO: comments
 DT_EXPORT DtEnvironment* dt_environment_instance(void);

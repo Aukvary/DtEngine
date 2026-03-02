@@ -66,11 +66,15 @@ set(EDITOR_SOURCES
         Editor/DeleteMe.c
 )
 
-add_library(DtEngine STATIC ${CORE_SOURCES})
+add_library(DtEngine_Objects OBJECT ${CORE_SOURCES})
+target_compile_options(DtEngine_Objects PRIVATE -fPIC)
+
+add_library(DtEngine STATIC $<TARGET_OBJECTS:DtEngine_Objects>)
 
 set_target_properties(DtEngine PROPERTIES
         OUTPUT_NAME "DtEngine"
         ARCHIVE_OUTPUT_DIRECTORY "${CORE_OUTPUT_DIR}"
+        POSITION_INDEPENDENT_CODE ON
 )
 
 add_executable(DtEngineTest
@@ -88,10 +92,11 @@ target_compile_definitions(GameLibShared PRIVATE -DEDITOR)
 
 if (WIN32)
     set_target_properties(GameLibStatic PROPERTIES
-            OUTPUT_NAME "GameLibStatic"
+            OUTPUT_NAME "GameLib"
             ARCHIVE_OUTPUT_DIRECTORY "${GAME_OUTPUT_DIR}"
     )
     set_target_properties(GameLibShared PROPERTIES
+            OUTPUT_NAME "GameLib"
             RUNTIME_OUTPUT_DIRECTORY "${EDITOR_OUTPUT_DIR}"
             ARCHIVE_OUTPUT_DIRECTORY "${EDITOR_OUTPUT_DIR}"
     )
@@ -105,8 +110,7 @@ else ()
             OUTPUT_NAME "GameLib"
             LIBRARY_OUTPUT_DIRECTORY "${EDITOR_OUTPUT_DIR}"
             RUNTIME_OUTPUT_DIRECTORY "${EDITOR_OUTPUT_DIR}"
-            VERSION "1.0.0"
-            SOVERSION "1"
+
     )
 endif ()
 
@@ -129,12 +133,12 @@ add_library(EditorLib
 if (WIN32)
     set_target_properties(EditorLib PROPERTIES
             OUTPUT_NAME "EditorLibStatic"
-            ARCHIVE_OUTPUT_DIRECTORY "${GAME_OUTPUT_DIR}"
+            ARCHIVE_OUTPUT_DIRECTORY "${EDITOR_OUTPUT_DIR}"
     )
 else ()
     set_target_properties(EditorLib PROPERTIES
             OUTPUT_NAME "EditorLib"
-            ARCHIVE_OUTPUT_DIRECTORY "${GAME_OUTPUT_DIR}"
+            ARCHIVE_OUTPUT_DIRECTORY "${EDITOR_OUTPUT_DIR}"
     )
 endif ()
 
@@ -149,7 +153,7 @@ set_target_properties(Game PROPERTIES
 )
 
 # ============ Include директории ============
-foreach (TARGET DtEngine DtEngineTest GameLibStatic GameLibShared Editor Game)
+foreach (TARGET DtEngine_Objects DtEngine DtEngineTest GameLibStatic GameLibShared Editor Game)
     target_include_directories(${TARGET} PRIVATE
             "${CMAKE_CURRENT_SOURCE_DIR}/Core"
     )
@@ -167,11 +171,7 @@ target_include_directories(Game PRIVATE
 
 # ============ Линковка зависимостей ============
 foreach (TARGET DtEngineTest GameLibStatic GameLibShared Editor EditorLib)
-    target_link_libraries(${TARGET} PUBLIC
-            -Wl,--whole-archive
-            DtEngine
-            -Wl,--no-whole-archive
-)
+    target_link_libraries(${TARGET} PRIVATE $<TARGET_OBJECTS:DtEngine_Objects>)
 endforeach ()
 target_link_libraries(GameLibShared PRIVATE EditorLib)
 target_link_libraries(Game PUBLIC GameLibStatic)

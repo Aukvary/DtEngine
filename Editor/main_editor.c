@@ -1,10 +1,14 @@
-#include <stdio.h>
 #include "scheduler/LazyLoad.h"
 
 int main(void) {
-    const char* path = "libGameLibShared"DT_LIB_EXTENSION;
+    const char* path = DT_LIB_NAME("./libGameLib");
     DtEnvironment* game = dt_environment_instance();
-    dt_load_module(game, path);
+    void* ptr = dt_module_load(game, path);
+    dt_module_load(game, path);
+
+    dt_module_unload(game, ptr);
+
+    dt_module_load(game, path);
 
     return 0;
 }

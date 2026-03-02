@@ -1,7 +1,13 @@
 #include <stdio.h>
 #include "scheduler/LazyLoad.h"
 void initialize_func(DtEnvironment* game) {
-    printf("init\n");
+    printf("initialize start\n");
+#ifdef EDITOR
+    printf("editor mode\n");
+#else
+    printf("default mode\n");
+#endif
+    printf("initialize end\n");
 }
 
 void deinitialize_func(DtEnvironment* game) {
