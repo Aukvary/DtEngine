@@ -43,6 +43,7 @@ set(CORE_SOURCES
         Core/Ecs/DrawHandler.c
         Core/scheduler/SceneLoader.c
         Core/Collections/RbTree.c
+        Core/scheduler/Environment.c
 )
 
 set(TEST_SOURCES
@@ -113,6 +114,7 @@ add_executable(Editor
         Editor/main_editor.c
         ${EDITOR_SOURCES}
 )
+target_compile_definitions(Editor PRIVATE -DEDITOR)
 
 set_target_properties(Editor PROPERTIES
         OUTPUT_NAME "Editor"
@@ -164,7 +166,7 @@ target_include_directories(Game PRIVATE
 )
 
 # ============ Линковка зависимостей ============
-foreach (TARGET DtEngineTest GameLibStatic GameLibShared)
+foreach (TARGET DtEngineTest GameLibStatic GameLibShared Editor EditorLib)
     target_link_libraries(${TARGET} PUBLIC
             -Wl,--whole-archive
             DtEngine

@@ -45,19 +45,19 @@ typedef struct DtComponentData {
 #define DT_FIELD_ATTRIBUTES_COUNT(type, name, component_name, ...)                                 \
     (sizeof((DtAttributeData[]) {__VA_ARGS__}) / sizeof(DtAttributeData)),
 
-//TODO: comments
+// TODO: comments
 #define DT_DEFINE_COMPONENT(component_name, fields)                                                \
     typedef struct {                                                                               \
         fields(DT_FIELD_DECL, component_name)                                                      \
     } component_name;
 
-//TODO: comments
+// TODO: comments
 #define DT_REGISTER_TAG(component_name, ...)                                                       \
     static DtAttributeData component_name##_attrs[] = {__VA_ARGS__};                               \
                                                                                                    \
     static DtComponentData local_##component_name##_data;                                          \
                                                                                                    \
-    static __attribute__((constructor)) void component_name##_register_component(void) {           \
+    static __attribute__((constructor(101))) void component_name##_register_component(void) {        \
         local_##component_name##_data = (DtComponentData) {                                        \
             .name = #component_name,                                                               \
             .attributes = component_name##_attrs,                                                  \
@@ -72,7 +72,7 @@ typedef struct DtComponentData {
     }                                                                                              \
     DtComponentData component_name##_data() { return local_##component_name##_data; }
 
-//TODO: comments
+// TODO: comments
 #define DT_REGISTER_COMPONENT(component_name, fields, ...)                                         \
     static DtAttributeData component_name##_attrs[] = {__VA_ARGS__};                               \
                                                                                                    \
@@ -91,7 +91,7 @@ typedef struct DtComponentData {
                                                                                                    \
     static DtComponentData local_##component_name##_data;                                          \
                                                                                                    \
-    static __attribute__((constructor)) void component_name##_register_component(void) {           \
+    static __attribute__((constructor(101))) void component_name##_register_component(void) {        \
         local_##component_name##_data = (DtComponentData) {                                        \
             .name = #component_name,                                                               \
             .attributes = component_name##_attrs,                                                  \
@@ -135,7 +135,7 @@ const DtComponentData* dt_component_get_data_by_id(u16 id);
  */
 const DtComponentData* dt_component_get_data_by_name(const char* name);
 
-//TODO: comments
+// TODO: comments
 const DtComponentData** dt_component_get_all(u16* size);
 
 typedef struct {
@@ -147,10 +147,10 @@ typedef struct {
     i16 priority;
 } DtUpdateData;
 
-//TODO: comments
+// TODO: comments
 #define DT_REGISTER_UPDATE(system_name, new_func)                                                  \
     static DtUpdateData local_##system_name##_data;                                                \
-    static __attribute__((constructor)) void dt_##system_name##_register_update(void) {            \
+    static __attribute__((constructor(101))) void dt_##system_name##_register_update(void) {         \
         local_##system_name##_data = (DtUpdateData) {                                              \
             .name = #system_name,                                                                  \
             .new = new_func,                                                                       \
@@ -159,16 +159,16 @@ typedef struct {
     }                                                                                              \
     DtUpdateData system_name##_data() { return local_##system_name##_data; }
 
-//TODO: comments
+// TODO: comments
 void dt_update_register(DtUpdateData* data);
-//TODO: comments
+// TODO: comments
 const DtUpdateData* dt_update_get_data_by_name(const char* name);
-//TODO: comments
+// TODO: comments
 const DtUpdateData* dt_update_get_data_by_id(u16 id);
-//TODO: comments
+// TODO: comments
 const DtUpdateData** dt_update_get_all(u16* size);
 
-//TODO: comments
+// TODO: comments
 typedef struct {
     char* name;
     u16 id;
@@ -178,10 +178,10 @@ typedef struct {
     i16 priority;
 } DtDrawData;
 
-//TODO: comments
+// TODO: comments
 #define DT_REGISTER_DRAW(system_name, new_func)                                                    \
     static DtDrawData local_##system_name##_data;                                                  \
-    static __attribute__((constructor)) void dt_##system_name##_register_draw(void) {              \
+    static __attribute__((constructor(101))) void dt_##system_name##_register_draw(void) {              \
         local_##system_name##_data = (DtDrawData) {                                                \
             .name = #system_name,                                                                  \
             .new = new_func,                                                                       \
@@ -190,13 +190,13 @@ typedef struct {
     }                                                                                              \
     DtDrawData system_name##_data() { return local_##system_name##_data; }
 
-//TODO: comments
+// TODO: comments
 void dt_draw_register(DtDrawData* data);
-//TODO: comments
+// TODO: comments
 const DtDrawData* dt_draw_get_data_by_name(const char* name);
-//TODO: comments
+// TODO: comments
 const DtDrawData* dt_draw_get_data_by_id(u16 id);
-//TODO: comments
+// TODO: comments
 const DtDrawData** dt_draw_get_all(u16* size);
 
 #endif /*COMPONENTS_HANDLER_H*/

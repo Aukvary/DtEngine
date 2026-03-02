@@ -6,9 +6,6 @@
 #include "Ecs/RegisterHandler.h"
 
 //TODO: comments
-typedef struct ModuleInfo ModuleInfo;
-
-//TODO: comments
 typedef struct {
     char* name;
     u16 id;
@@ -23,13 +20,6 @@ typedef struct {
     UpdateHandler* update_handler;
     DrawHandler* draw_handler;
 } DtScene;
-
-//TODO: comments
-typedef struct {
-    DtScene* active_scene;
-    DT_VEC(ModuleInfo)* modules;
-    DtRbTree* scenes;
-} DtScheduler;
 
 //TODO: comments
 const DtScene* dt_scenes_get_active(void);
