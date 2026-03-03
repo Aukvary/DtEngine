@@ -37,12 +37,42 @@
 // TODO: add comment
 typedef struct DtEnvironment DtEnvironment;
 
+// TODO: comments
+typedef struct {
+    DtEnvironment* environment;
+    char* name;
+
+    DtEntity* entities;
+    u16 entities_count;
+
+    DtEcsManager* manager;
+    UpdateHandler* update_handler;
+    DrawHandler* draw_handler;
+} DtScene;
+
+// TODO: comments
+void dt_add_scenes(const char* directory);
+// TODO: comments
+void dt_add_scene(const char* path);
+// TODO: comments
+const DtScene* dt_scenes_get_active(void);
+// TODO: comments
+const DtScene* dt_scenes_set_active(const char* name, bool unload);
+// TODO: comments
+void dt_scene_load_by_id(const char* name);
+// TODO: comments
+void dt_scene_unload_by_id(const char* name);
+// TODO: comments
+bool dt_scenes_scene_is_loaded(const char* name);
+
 // TODO: add comment
 typedef struct {
     char* name;
 
     void (*initialize)(DtEnvironment* env);
     void (*deinitialize)(DtEnvironment* env);
+
+    DtEnvironment* environment;
 
     DT_LIB_HANDLE handle;
 } ModuleInfo;
@@ -58,8 +88,16 @@ struct DtEnvironment {
     u16 updaters_count;
     const DtDrawData** drawers;
     u16 drawers_count;
+
+    void (*add_scenes)(const char* directory);
+    void (*add_scene)(const char* path);
+
+    const DtComponentData* (*get_component)(const char* name);
+    const DtUpdateData* (*get_update)(const char* name);
+    const DtDrawData* (*get_draw)(const char* name);
 };
 
+// TODO: comments
 typedef void (*DtEnvironmentHandle)(DtEnvironment*);
 
 // TODO: comments
@@ -69,13 +107,7 @@ ModuleInfo* dt_module_load(DtEnvironment* env, const char* path);
 void dt_module_unload(DtEnvironment* env, ModuleInfo* info);
 
 // TODO: comments
-DT_EXPORT DtEnvironment* dt_environment_instance(void);
-
-// TODO: comments
-void dt_add_scenes(const char* directory);
-// TODO: comments
-void dt_add_scene(const char* path);
-
+DtEnvironment* dt_environment_instance(void);
 
 // TODO: comments
 DtRawEntity* dt_load_prefab(const char* path);

@@ -184,7 +184,7 @@ DtEcsManager* dt_ecs_manager_new(DtEcsManagerConfig cfg) {
         exit(1);
     }
 
-    if (!cfg.sparce_size) cfg.sparce_size = 50;
+    if (!cfg.sparse_size) cfg.sparse_size = 50;
     if (!cfg.dense_size) cfg.dense_size = 50;
     if (!cfg.recycle_size) cfg.recycle_size = 10;
     if (!cfg.children_size) cfg.children_size = 50;
@@ -194,8 +194,8 @@ DtEcsManager* dt_ecs_manager_new(DtEcsManagerConfig cfg) {
     if (!cfg.filters_size) cfg.filters_size = 50;
 
     *manager = (DtEcsManager) {
-        .sparse_entities = DT_CALLOC(cfg.sparce_size, sizeof(DtEntityInfo)),
-        .sparse_size = cfg.sparce_size,
+        .sparse_entities = DT_CALLOC(cfg.sparse_size, sizeof(DtEntityInfo)),
+        .sparse_size = cfg.sparse_size,
         .entities_ptr = 0,
 
         .cfg_dense_size = cfg.dense_size,

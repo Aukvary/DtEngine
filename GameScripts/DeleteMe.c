@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "scheduler/LazyLoad.h"
+#include "scheduler/RuntimeScheduler.h"
 void initialize_func(DtEnvironment* game) {
     printf("initialize start\n");
 #ifdef EDITOR

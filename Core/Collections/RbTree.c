@@ -17,6 +17,11 @@ static void* dt_rb_node_get(DtRbNode* root, u64 hash);
 static DtRbNode* dt_rb_node_remove(DtRbNode** root, u64 hash);
 static void dt_rb_node_remove_balance(DtRbNode** root, DtRbNode* x, DtRbNode* parent);
 
+static void dt_rb_start(void* data);
+static void* dt_rb_current(void* data);
+static bool dt_rb_has_current(void* data);
+static void dt_rb_next(void* data);
+
 static DtRbNode* dt_rb_node_new(void* data, u64 hash) {
     DtRbNode* node = DT_MALLOC(sizeof(DtRbNode));
 
@@ -383,4 +388,82 @@ void dt_rb_tree_remove(DtRbTree* head, u64 hash) {
     dt_rb_node_remove(&head->root, hash);
 }
 
-void dt_rb_tree_free(DtRbTree* head) {}
+static DtRbNode* dt_rb_find_leftmost(DtRbNode* node) {
+    if (node == NULL) return NULL;
+    while (node->left != NULL) {
+        node = node->left;
+    }
+    return node;
+}
+
+static DtRbNode* dt_rb_find_rightmost(DtRbNode* node) {
+    if (node == NULL) return NULL;
+    while (node->right != NULL) {
+        node = node->right;
+    }
+    return node;
+}
+
+static DtRbNode* dt_rb_find_next_inorder(DtRbNode* node) {
+    if (node == NULL) return NULL;
+
+    if (node->right != NULL) {
+        return dt_rb_find_leftmost(node->right);
+    }
+
+    DtRbNode* parent = node->parent;
+    while (parent != NULL && node == parent->right) {
+        node = parent;
+        parent = parent->parent;
+    }
+
+    return parent;
+}
+
+static DtRbNode* dt_rb_find_prev_inorder(DtRbNode* node) {
+    if (node == NULL) return NULL;
+
+    if (node->left != NULL) {
+        return dt_rb_find_rightmost(node->left);
+    }
+
+    DtRbNode* parent = node->parent;
+    while (parent != NULL && node == parent->left) {
+        node = parent;
+        parent = parent->parent;
+    }
+
+    return parent;
+}
+
+static void dt_rb_start(void* data) {
+    DtRbTree* tree = data;
+    tree->iterator_node = dt_rb_find_leftmost(tree->root);
+}
+
+static void* dt_rb_current(void* data) {
+    return ((DtRbTree*)data)->iterator_node;
+}
+
+static bool dt_rb_has_current(void* data) {
+    return ((DtRbTree*)data)->iterator_node != NULL;
+}
+
+static void dt_rb_next(void* data) {
+    DtRbTree* tree = data;
+    if (tree->iterator_node != NULL) {
+        tree->iterator_node = dt_rb_find_next_inorder(tree->iterator_node);
+    }
+}
+
+static void dt_rb_prev(void* data) {
+    DtRbTree* tree = data;
+    if (tree->iterator_node != NULL) {
+        tree->iterator_node = dt_rb_find_prev_inorder(tree->iterator_node);
+    }
+}
+
+static void dt_rb_end(void* data) {
+    DtRbTree* tree = data;
+    tree->iterator_node = dt_rb_find_rightmost(tree->root);
+}

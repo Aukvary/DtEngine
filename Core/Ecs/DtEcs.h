@@ -156,20 +156,14 @@ void dt_entity_container_free(DtEntityContainer* container);
  */
 typedef struct DtEcsManagerConfig {
     u16 dense_size;
-    u16 sparce_size;
+    u16 sparse_size;
     u16 recycle_size;
-
     u16 children_size;
-
     u16 components_count;
-
     u16 pools_size;
-
     u32 masks_size;
-
     u32 include_mask_count;
     u32 exclude_mask_count;
-
     u32 filters_size;
 } DtEcsManagerConfig;
 

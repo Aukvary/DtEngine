@@ -1,153 +1,261 @@
-// #include <cjson/cJSON.h>
-// #include "scheduler/DtScheduler.h"
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <string.h>
-// #include "../Core/DtAllocators.h"
-// #include "Collections/Collections.h"
-// #if defined(_WIN32) || defined(_WIN64)
-// #include <windows.h>
-// #else
-// #include <dirent.h>
-// #include <sys/types.h>
-// #endif
-//
-//
-// #define SCENES_PATH "./source/scenes/"
-// #define SCENE_EXTENSION ".dt.scene"
-//
-// static DtRbTree scenes;
-// static DtScene* dt_scene_parse(const char* file_name);
-// static char* dt_scene_parse_name(FILE* file_input);
-// static void dt_scene_parse_ecs_manager_cfg(cJSON* cfg, DtScene* scene);
-// static void dt_scene_parse_systems(cJSON* systems, DtScene* scene);
-// static void dt_scene_parse_entities(cJSON* entities, DtScene* scene);
-//
-// static u64 get_scene_hash(const char* name) {
-//     int hash = 2147483647;
-//     while (*name) {
-//         hash ^= *name++;
-//         hash *= 314159;
-//     }
-//     return hash;
-// }
-//
-// static int is_scene(const char* filename) {
-//     const size_t len_filename = strlen(filename);
-//     const size_t len_ext = strlen(SCENE_EXTENSION);
-//
-//     if (len_filename < len_ext)
-//         return 0;
-//     return strcmp(filename + len_filename - len_ext, SCENE_EXTENSION) == 0;
-// }
-//
-// void dt_add_all_scenes(void) {
-//     scenes = dt_rb_tree_new();
-// #if defined(_WIN32) || defined(_WIN64)
-//     WIN32_FIND_DATA findFileData;
-//     char search_path[MAX_PATH];
-//
-//     snprintf(search_path, MAX_PATH, "%s\\*", SCENES_PATH);
-//     HANDLE hFind = FindFirstFile(search_path, &findFileData);
-//
-//     if (hFind == INVALID_HANDLE_VALUE) {
-//         printf("[DEBUG]Directory not found: %s\n", SCENES_PATH);
-//         return;
-//     }
-//
-//     do {
-//         if (findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-//             continue;
-//         if (!is_scene(findFileData.cFileName)) continue;
-//
-//         DtScene* scene = dt_scene_parse(findFileData.cFileName);
-//
-//         // dt_rb_tree_add(&scenes, )
-//     } while (FindNextFile(hFind, &findFileData) != 0);
-//
-//
-//
-//     FindClose(hFind);
-// #else
-//     DIR* dir = opendir(directory_path);
-//     if (!dir) {
-//         perror("opendir");
-//         return;
-//     }
-//
-//     struct dirent* entry;
-//     while ((entry = readdir(dir)) != NULL) {
-//         if (entry->d_type == DT_REG) {
-//             if (is_scene(entry->d_name)) {
-//                 printf("%s\n", entry->d_name);
-//             }
-//         }
-//     }
-//
-//     closedir(dir);
-// #endif
-// }
-//
-// static DtScene* dt_scene_parse(const char* file_name) {
-//     FILE* file = fopen(file_name, "rb");
-//
-//     if (file == NULL) {
-//         //TODO: add handle
-//     }
-//
-//     fseek(file, 0, SEEK_END);
-//
-//     i32 size = ftell(file);
-//     fseek(file, 0, SEEK_SET);
-//
-//     char* scene_info = DT_STACK_ALLOC(size + 1);
-//     fgets(scene_info, size, file);
-//
-//     // char* scene_json
-//
-//     cJSON* root = cJSON_Parse(file_name);
-//     if (root == NULL) {
-//         //TODO: add handle
-//     }
-//
-//     cJSON* id = cJSON_GetObjectItem(root, "id");
-//     if (id == NULL) {
-//         //TODO: add handle
-//     }
-//
-//
-//     fclose(file);
-// }
-//
-// static char* dt_scene_parse_name(FILE* file_input) {
-//     char* dot = strstr(file_input, ".");
-//     *dot = '\0';
-//     u16 name_len = strlen(file_input);
-//     char* copy_name = DT_MALLOC(name_len + 1);
-//     memcpy(copy_name, file_input, name_len);
-//     copy_name[name_len] = '\0';
-// }
-//
-// static void dt_scene_parse_ecs_manager_cfg(cJSON* cfg, DtScene* scene) {
-//
-// }
-//
-// static void dt_scene_parse_systems(cJSON* systems, DtScene* scene) {
-//
-// }
-//
-// static void dt_scene_parse_entities(cJSON* entities, DtScene* scene) {
-//
-// }
-//
-// const DtScene* dt_scenes_get_active(void) {}
-//
-// const DtScene* dt_scenes_set_active_without_unload(int idx) {}
-//
-// void dt_scenes_set_active_with_unload(int idx) {}
-//
-// void dt_scene_load_by_id(int idx) {}
-//
-// void dt_scene_unload_by_id(int idx) {}
-//
-// bool dt_scenes_scene_is_load(int idx) {}
+#include <cjson/cJSON.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "Collections/Collections.h"
+#include "DtAllocators.h"
+#include "scheduler/RuntimeScheduler.h"
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#else
+#include <dirent.h>
+#include <sys/types.h>
+#endif
+
+#define SCENE_EXTENSION ".dt.scene"
+
+static DtRbTree scenes;
+static DtScene* dt_scene_parse(const char* path, DtEnvironment* env);
+static void dt_scene_parse_ecs_manager(cJSON* json_cfg, DtScene* scene);
+static void dt_scene_parse_systems(cJSON* systems, DtScene* scene, bool update);
+static void dt_scene_parse_entities(cJSON* entities, DtScene* scene);
+
+static u64 get_scene_hash(const char* name) {
+    int hash = 2147483647;
+    while (*name) {
+        hash ^= *name++;
+        hash *= 314159;
+    }
+    return hash;
+}
+
+static int is_scene(const char* filename) {
+    const size_t len_filename = strlen(filename);
+    const size_t len_ext = strlen(SCENE_EXTENSION);
+
+    if (len_filename < len_ext)
+        return 0;
+    return strcmp(filename + len_filename - len_ext, SCENE_EXTENSION) == 0;
+}
+
+void dt_add_scene(const char* path) {
+    DtEnvironment* env = dt_environment_instance();
+#if defined(_WIN32) || defined(_WIN64)
+    if (!is_scene(path)) {
+        fprintf(stderr, "[DEBUG]File is not a scene or doesn't exist: %s\n", path);
+        return;
+    }
+
+    char* file_name = strrchr(path, '/');
+#if defined(_WIN32) || defined(_WIN64)
+    char* win_file_name = strrchr(path, '\\');
+    if (win_file_name != NULL)
+        file_name = win_file_name;
+#endif
+
+    char* ext = strchr(path, '.');
+
+    size_t len = strlen(file_name) - strlen(ext);
+    char* name = DT_MALLOC(len + 1);
+    strncpy(name, file_name, len);
+
+    DtScene* scene = dt_scene_parse(path, env);
+    if (scene == NULL) {
+        fprintf(stderr, "[DEBUG]Failed to parse scene: %s\n", path);
+        DT_FREE(name);
+        return;
+    }
+
+    scene->name = file_name;
+
+    dt_rb_tree_add(&env->scenes, scene, get_scene_hash(path));
+#else
+    DIR* dir = opendir(directory_path);
+    if (!dir) {
+        perror("opendir");
+        return;
+    }
+
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_REG) {
+            if (is_scene(entry->d_name)) {
+                printf("%s\n", entry->d_name);
+            }
+        }
+    }
+
+    closedir(dir);
+#endif
+}
+
+static DtScene* dt_scene_parse(const char* path, DtEnvironment* env) {
+    FILE* file = fopen(path, "rb");
+
+    if (file == NULL) {
+        fprintf(stderr, "[ERROR] Could not open file %s\n", path);
+    }
+
+    fseek(file, 0, SEEK_END);
+
+    i32 size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    char* scene_info = DT_STACK_ALLOC(size + 1);
+    fgets(scene_info, size, file);
+
+    cJSON* root = cJSON_Parse(scene_info);
+    if (root == NULL) {
+        // TODO: add handle
+    }
+
+    cJSON* manager_config = cJSON_GetObjectItem(root, "manager_config");
+    cJSON* update_systems = cJSON_GetObjectItem(root, "draw_systems");
+    cJSON* draw_systems = cJSON_GetObjectItem(root, "update_systems");
+    cJSON* entities = cJSON_GetObjectItem(root, "");
+
+    if (!manager_config || !update_systems || !draw_systems || !entities) {
+        // TODO: add handle
+    }
+
+    DtScene* scene = DT_MALLOC(sizeof(DtScene));
+
+    *scene = (DtScene) {
+        .environment = env,
+    };
+
+    DtEcsManagerConfig cfg;
+    dt_scene_parse_ecs_manager(manager_config, scene);
+
+    fclose(file);
+
+    return scene;
+}
+
+static void dt_scene_parse_ecs_manager(cJSON* json_cfg, DtScene* scene) {
+    DtEcsManagerConfig cfg;
+    cJSON* dense_size = cJSON_GetObjectItem(json_cfg, "dense_size");
+    if (!dense_size) {
+        fprintf(stderr, "[DEBUG]Scene hasn't \"dense_size\" data");
+        cfg.dense_size = 0;
+    } else {
+        cfg.dense_size = dense_size->valueint;
+    }
+
+    cJSON* sparse_size = cJSON_GetObjectItem(json_cfg, "sparse_size");
+    if (!sparse_size) {
+        fprintf(stderr, "[DEBUG]Scene hasn't \"sparse_size\" data");
+        cfg.sparse_size = 0;
+    } else {
+        cfg.sparse_size = sparse_size->valueint;
+    }
+
+    cJSON* recycle_size = cJSON_GetObjectItem(json_cfg, "recycle_size");
+    if (!recycle_size) {
+        fprintf(stderr, "[DEBUG]Scene hasn't \"recycle_size\" data");
+        cfg.recycle_size = 0;
+    } else {
+        cfg.recycle_size = recycle_size->valueint;
+    }
+
+    cJSON* children_size = cJSON_GetObjectItem(json_cfg, "children_size");
+    if (!children_size) {
+        fprintf(stderr, "[DEBUG]Scene hasn't \"children_size\" data");
+        cfg.children_size = 0;
+    } else {
+        cfg.children_size = children_size->valueint;
+    }
+
+    cJSON* component_count = cJSON_GetObjectItem(json_cfg, "component_count");
+    if (!component_count) {
+        fprintf(stderr, "[DEBUG]Scene hasn't \"component_count\" data");
+        cfg.components_count = 0;
+    } else {
+        cfg.components_count = component_count->valueint;
+    }
+
+    cJSON* pools_size = cJSON_GetObjectItem(json_cfg, "pools_size");
+    if (!pools_size) {
+        fprintf(stderr, "[DEBUG]Scene hasn't \"pools_size\" data");
+        cfg.pools_size = 0;
+    } else {
+        cfg.pools_size = pools_size->valueint;
+    }
+
+    cJSON* include_mask_count = cJSON_GetObjectItem(json_cfg, "include_mask_count");
+    if (!include_mask_count) {
+        fprintf(stderr, "[DEBUG]Scene hasn't \"include_mask_count\" data");
+        cfg.include_mask_count = 0;
+    } else {
+        cfg.include_mask_count = include_mask_count->valueint;
+    }
+
+    cJSON* exclude_mask_count = cJSON_GetObjectItem(json_cfg, "exclude_mask_count");
+    if (!exclude_mask_count) {
+        fprintf(stderr, "[DEBUG]Scene hasn't \"exclude_mask_count\" data");
+        cfg.exclude_mask_count = 0;
+    } else {
+        cfg.exclude_mask_count = exclude_mask_count->valueint;
+    }
+
+    cJSON* filters_size = cJSON_GetObjectItem(json_cfg, "filters_size");
+    if (!filters_size) {
+        fprintf(stderr, "[DEBUG]Scene hasn't \"filters_size\" data");
+    } else {
+        cfg.filters_size = filters_size->valueint;
+    }
+
+    cJSON* masks_size = cJSON_GetObjectItem(json_cfg, "masks_size");
+    if (!masks_size) {
+        fprintf(stderr, "[DEBUG]Scene hasn't \"masks_size\" data");
+        cfg.masks_size = 0;
+    } else {
+        cfg.masks_size = masks_size->valueint;
+    }
+
+    scene->manager = dt_ecs_manager_new(cfg);
+}
+
+static void dt_scene_parse_update_systems(cJSON* systems, DtScene* scene) {
+    u16 count = cJSON_GetArraySize(systems);
+
+    scene->update_handler = dt_update_handler_new(scene->manager, count);
+    cJSON* system = NULL;
+    cJSON_ArrayForEach(system, systems) {
+        const DtUpdateData*  data = NULL;
+        const char* name = cJSON_GetStringValue(system);
+        if ((data = dt_component_get_data_by_name(name))) {
+
+        } else {
+
+        }
+        // dt_update_handler_add(scene->update_handler, );
+    }
+}
+
+static void dt_scene_parse_draw_systems(cJSON* systems, DtScene* scene) {
+    u16 count = cJSON_GetArraySize(systems);
+
+    cJSON* system = NULL;
+    cJSON_ArrayForEach(system, systems) {
+        sce
+    }
+}
+
+static void dt_scene_parse_entities(cJSON* entities, DtScene* scene) {
+    *count = cJSON_GetArraySize(entities);
+
+    *infos = DT_CALLOC(*count, sizeof(DtEntityInfo));
+
+    cJSON* entity = NULL;
+    cJSON_ArrayForEach(entity, entities) {
+        cJSON* component = NULL;
+        cJSON_ArrayForEach(component, cJSON_GetObjectItem(entity, "components")) {
+            if (cJSON_IsString(component)) {
+                dt_component_get_data_by_name(component->string);
+            } else {
+                
+            }
+        }
+    }
+}

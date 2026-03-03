@@ -10,8 +10,10 @@
     "exclude_mask_count": 4,
     "filters_size": 4
   },
-  "systems": [
-    "TestUpdate1",
+  "update_systems": [
+    "TestUpdate1"
+  ],
+  "draw_systems": [
     "TestDraw1"
   ],
   "entities": {

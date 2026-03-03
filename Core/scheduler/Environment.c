@@ -1,6 +1,6 @@
 #include "Collections/Collections.h"
 #include "DtAllocators.h"
-#include "LazyLoad.h"
+#include "RuntimeScheduler.h"
 
 static DtEnvironment environment;
 
@@ -18,6 +18,10 @@ __attribute__((constructor(102))) static void initialize_environment(void) {
         .active_scene = NULL,
         .modules = dt_rb_tree_new(),
         .scenes = dt_rb_tree_new(),
+
+        .get_component = dt_component_get_data_by_name,
+        .get_update = dt_update_get_data_by_name,
+        .get_draw = dt_draw_get_data_by_name,
     };
 
     environment.components = dt_component_get_all(&environment.components_count);
@@ -54,6 +58,9 @@ ModuleInfo* dt_module_load(DtEnvironment* env, const char* path) {
     void (*deinitialize)(DtEnvironment*) =
         *(DtEnvironmentHandle*) DT_LIB_GET(lib, DT_MODULE_DEINITIALIZE_STR);
 
+    DtEnvironment* (*get_environment)(void) =
+        *(DtEnvironment * (**) (void) ) DT_LIB_GET(lib, "dt_environment_instance");
+
     ModuleInfo* info = DT_MALLOC(sizeof(ModuleInfo));
 
     *info = (ModuleInfo) {
@@ -61,6 +68,7 @@ ModuleInfo* dt_module_load(DtEnvironment* env, const char* path) {
         .initialize = initialize,
         .deinitialize = deinitialize,
         .handle = lib,
+        .environment = get_environment(),
     };
 
     dt_rb_tree_add(&env->modules, info, hash);
@@ -72,7 +80,7 @@ ModuleInfo* dt_module_load(DtEnvironment* env, const char* path) {
 
 void dt_module_unload(DtEnvironment* env, ModuleInfo* info) {
     if (!info) {
-        fprintf(stderr, "[DEBUG]module is NULL\n");
+        fprintf(stderr, "[DEBUG]module was NULL\n");
         return;
     }
 

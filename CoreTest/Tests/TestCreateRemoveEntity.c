@@ -4,7 +4,7 @@
 
 static const DtEcsManagerConfig cfg = {
     .dense_size = 1,
-    .sparce_size = 1,
+    .sparse_size = 1,
     .recycle_size = 0,
     .components_count = 3,
     .pools_size = 3,

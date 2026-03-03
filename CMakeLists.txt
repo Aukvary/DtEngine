@@ -59,7 +59,6 @@ set(TEST_SOURCES
 
 set(GAME_SOURCES
         GameScripts/DeleteMe.c
-
 )
 
 set(EDITOR_SOURCES

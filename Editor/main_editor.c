@@ -1,4 +1,4 @@
-#include "scheduler/LazyLoad.h"
+#include "scheduler/RuntimeScheduler.h"
 
 int main(void) {
     const char* path = DT_LIB_NAME("./libGameLib");
