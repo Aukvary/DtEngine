@@ -123,11 +123,13 @@ set_target_properties(Editor PROPERTIES
         OUTPUT_NAME "Editor"
         RUNTIME_OUTPUT_DIRECTORY "${EDITOR_OUTPUT_DIR}"
 )
-
 add_library(EditorLib
         STATIC
         ${EDITOR_SOURCES}
 )
+
+target_compile_definitions(EditorLib PRIVATE -DEDITOR)
+target_compile_definitions(EditorLib PRIVATE -DEDITOR_LIB)
 
 if (WIN32)
     set_target_properties(EditorLib PROPERTIES

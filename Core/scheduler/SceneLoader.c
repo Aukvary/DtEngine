@@ -17,7 +17,8 @@
 static DtRbTree scenes;
 static DtScene* dt_scene_parse(const char* path, DtEnvironment* env);
 static void dt_scene_parse_ecs_manager(cJSON* json_cfg, DtScene* scene);
-static void dt_scene_parse_systems(cJSON* systems, DtScene* scene, bool update);
+static void dt_scene_parse_update_systems(cJSON* systems, DtScene* scene);
+static void dt_scene_parse_draw_systems(cJSON* systems, DtScene* scene);
 static void dt_scene_parse_entities(cJSON* entities, DtScene* scene);
 
 static u64 get_scene_hash(const char* name) {
@@ -124,8 +125,11 @@ static DtScene* dt_scene_parse(const char* path, DtEnvironment* env) {
         .environment = env,
     };
 
-    DtEcsManagerConfig cfg;
     dt_scene_parse_ecs_manager(manager_config, scene);
+    dt_scene_parse_update_systems(update_systems, scene);
+    dt_scene_parse_draw_systems(draw_systems, scene);
+    dt_scene_parse_entities(entities, scene);
+
 
     fclose(file);
 
@@ -201,6 +205,7 @@ static void dt_scene_parse_ecs_manager(cJSON* json_cfg, DtScene* scene) {
     cJSON* filters_size = cJSON_GetObjectItem(json_cfg, "filters_size");
     if (!filters_size) {
         fprintf(stderr, "[DEBUG]Scene hasn't \"filters_size\" data");
+        cfg.filters_size = 0;
     } else {
         cfg.filters_size = filters_size->valueint;
     }
@@ -222,39 +227,60 @@ static void dt_scene_parse_update_systems(cJSON* systems, DtScene* scene) {
     scene->update_handler = dt_update_handler_new(scene->manager, count);
     cJSON* system = NULL;
     cJSON_ArrayForEach(system, systems) {
-        const DtUpdateData*  data = NULL;
+        const DtUpdateData* data = NULL;
         const char* name = cJSON_GetStringValue(system);
-        if ((data = dt_component_get_data_by_name(name))) {
-
-        } else {
-
+        if ((data = dt_update_get_data_by_name(name))) {
+            dt_update_handler_add(scene->update_handler, data->new());
+            continue;
         }
-        // dt_update_handler_add(scene->update_handler, );
+
+        FOREACH(ModuleInfo*, module, &scene->environment->modules.iterator, {
+            if ((data = module->environment->get_update(name))) {
+                dt_update_handler_add(scene->update_handler, data->new());
+                break;
+            }
+        });
     }
 }
 
 static void dt_scene_parse_draw_systems(cJSON* systems, DtScene* scene) {
     u16 count = cJSON_GetArraySize(systems);
 
+    scene->draw_handler = dt_draw_handler_new(scene->manager, count);
     cJSON* system = NULL;
     cJSON_ArrayForEach(system, systems) {
-        sce
+        const DtDrawData* data = NULL;
+        const char* name = cJSON_GetStringValue(system);
+        if ((data = dt_draw_get_data_by_name(name))) {
+            dt_draw_handler_add(scene->draw_handler, data->new());
+            continue;
+        }
+
+        FOREACH(ModuleInfo*, module, &scene->environment->modules.iterator, {
+            if ((data = module->environment->get_draw(name))) {
+                dt_draw_handler_add(scene->draw_handler, data->new());
+                break;
+            }
+        });
     }
 }
 
 static void dt_scene_parse_entities(cJSON* entities, DtScene* scene) {
-    *count = cJSON_GetArraySize(entities);
+    u16 count = cJSON_GetArraySize(entities);
+    scene->entities = DT_CALLOC(count, sizeof(DtRawEntity));
+    u16 i = 0;
+    cJSON* json_entity = NULL;
+    cJSON_ArrayForEach(json_entity, entities) {
+        cJSON* components = cJSON_GetObjectItem(json_entity, "components");
 
-    *infos = DT_CALLOC(*count, sizeof(DtEntityInfo));
-
-    cJSON* entity = NULL;
-    cJSON_ArrayForEach(entity, entities) {
+        DtEntity entity = dt_ecs_manager_new_entity(scene->manager);
         cJSON* component = NULL;
-        cJSON_ArrayForEach(component, cJSON_GetObjectItem(entity, "components")) {
+        cJSON_ArrayForEach(component, components) {
             if (cJSON_IsString(component)) {
-                dt_component_get_data_by_name(component->string);
+                dt_ecs_manager_entity_add_component_by_name(scene->manager, entity,
+                                                            cJSON_GetStringValue(component), NULL);
             } else {
-                
+                char* name = cJSON_GetStringValue(cJSON_GetObjectItem(component, "name"));
             }
         }
     }

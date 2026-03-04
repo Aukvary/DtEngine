@@ -42,7 +42,7 @@ typedef struct {
     DtEnvironment* environment;
     char* name;
 
-    DtEntity* entities;
+    DtRawEntity* entities;
     u16 entities_count;
 
     DtEcsManager* manager;
