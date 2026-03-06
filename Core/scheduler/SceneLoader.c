@@ -20,6 +20,7 @@ static void dt_scene_parse_ecs_manager(cJSON* json_cfg, DtScene* scene);
 static void dt_scene_parse_update_systems(cJSON* systems, DtScene* scene);
 static void dt_scene_parse_draw_systems(cJSON* systems, DtScene* scene);
 static void dt_scene_parse_entities(cJSON* entities, DtScene* scene);
+static void dt_component_parse(cJSON* component, DtComponentData* data, void* field_data);
 
 static u64 get_scene_hash(const char* name) {
     int hash = 2147483647;
@@ -231,15 +232,7 @@ static void dt_scene_parse_update_systems(cJSON* systems, DtScene* scene) {
         const char* name = cJSON_GetStringValue(system);
         if ((data = dt_update_get_data_by_name(name))) {
             dt_update_handler_add(scene->update_handler, data->new());
-            continue;
         }
-
-        FOREACH(ModuleInfo*, module, &scene->environment->modules.iterator, {
-            if ((data = module->environment->get_update(name))) {
-                dt_update_handler_add(scene->update_handler, data->new());
-                break;
-            }
-        });
     }
 }
 
@@ -253,15 +246,7 @@ static void dt_scene_parse_draw_systems(cJSON* systems, DtScene* scene) {
         const char* name = cJSON_GetStringValue(system);
         if ((data = dt_draw_get_data_by_name(name))) {
             dt_draw_handler_add(scene->draw_handler, data->new());
-            continue;
         }
-
-        FOREACH(ModuleInfo*, module, &scene->environment->modules.iterator, {
-            if ((data = module->environment->get_draw(name))) {
-                dt_draw_handler_add(scene->draw_handler, data->new());
-                break;
-            }
-        });
     }
 }
 
@@ -281,7 +266,30 @@ static void dt_scene_parse_entities(cJSON* entities, DtScene* scene) {
                                                             cJSON_GetStringValue(component), NULL);
             } else {
                 char* name = cJSON_GetStringValue(cJSON_GetObjectItem(component, "name"));
+                cJSON* values = cJSON_GetObjectItem(component, "values");
+                DtComponentData* data = dt_component_get_data_by_name(name);
+                cJSON* value = NULL;
+                cJSON_ArrayForEach(value, values) { dt_component_parse(value, data); }
             }
         }
+    }
+}
+
+static void dt_component_parse(cJSON* component, DtComponentData* data, void* field_data) {
+    const char* field_name = component->string;
+    i32 i = dt_component_get_field_index(data, field_name);
+    if (i == -1) return;
+    u16 offset = data->field_offsets[i];
+    char* type = data->field_types[i];
+
+    if (cJSON_IsNumber(component)) {
+
+    } else if (cJSON_IsString(component)) {
+
+    } else if (cJSON_IsBool(component)) {
+
+    } else if (cJSON_IsArray(component)) {
+
+    } else if (cJSON_IsNull(component)) {
     }
 }

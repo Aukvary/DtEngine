@@ -1,6 +1,7 @@
 #include "Collections/Collections.h"
 #include "DtAllocators.h"
 #include "RuntimeScheduler.h"
+#include "ExecuteOrder.h"
 
 static DtEnvironment environment;
 
@@ -13,7 +14,7 @@ static int get_hash(const char* name) {
     return hash;
 }
 
-__attribute__((constructor(102))) static void initialize_environment(void) {
+__attribute__((constructor(DT_ORDER_INIT_ENVIRONMENT))) static void initialize_environment(void) {
     environment = (DtEnvironment) {
         .active_scene = NULL,
         .modules = dt_rb_tree_new(),

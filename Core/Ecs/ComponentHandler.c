@@ -2,16 +2,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "DtAllocators.h"
 #include "RegisterHandler.h"
+#include "scheduler/RuntimeScheduler.h"
 
-
-#ifndef COMPONENT_TABLE_SIZE
-#define COMPONENT_TABLE_SIZE 107ULL
-#endif
-
+static u64 size = 0;
 static int id_counter = 0;
-static const DtComponentData* component_data_by_id[COMPONENT_TABLE_SIZE] = {NULL};
-static const DtComponentData* component_data_by_name[COMPONENT_TABLE_SIZE] = {NULL};
+static const DtComponentData** component_data_by_id = NULL;
+static const DtComponentData** component_data_by_name = NULL;
+
+void dt_component_increment_count() {
+    size++;
+}
 
 static int dt_component_get_hash(const char* name) {
     int hash = 2147483647;
@@ -23,17 +25,23 @@ static int dt_component_get_hash(const char* name) {
 }
 
 void dt_register_component(DtComponentData* data) {
+     if (!size) size = 107ULL;
+    if (!component_data_by_id) {
+        component_data_by_id = DT_CALLOC(size, sizeof(DtComponentData*));
+        component_data_by_name = DT_CALLOC(size, sizeof(DtComponentData*));
+    }
+
     data->id = id_counter++;
 
     component_data_by_id[data->id] = data;
 
-    u64 idx = dt_component_get_hash(data->name) % COMPONENT_TABLE_SIZE;
+    u64 idx = dt_component_get_hash(data->name) % size;
     const u64 start = idx;
     while (component_data_by_name[idx] != NULL) {
         if (strcmp(data->name, component_data_by_name[idx]->name) == 0)
             return;
 
-        idx = (idx + 1) % COMPONENT_TABLE_SIZE;
+        idx = (idx + 1) % size;
         if (idx == start) {
             printf("[DEBUG]component count out of range");
             exit(1);
@@ -45,7 +53,7 @@ void dt_register_component(DtComponentData* data) {
 }
 
 const DtComponentData* dt_component_get_data_by_id(const u16 id) {
-    if (id >= COMPONENT_TABLE_SIZE) {
+    if (id >= size) {
         return NULL;
     }
 
@@ -53,22 +61,47 @@ const DtComponentData* dt_component_get_data_by_id(const u16 id) {
 }
 
 const DtComponentData* dt_component_get_data_by_name(const char* name) {
-    u64 idx = dt_component_get_hash(name) % COMPONENT_TABLE_SIZE;
+    u64 idx = dt_component_get_hash(name) % size;
     const u64 start = idx;
 
     while (component_data_by_name[idx] != NULL &&
            strcmp(component_data_by_name[idx]->name, name) != 0) {
-        idx = (idx + 1) % COMPONENT_TABLE_SIZE;
+        idx = (idx + 1) % size;
         if (idx == start) {
+            DtEnvironment* env = dt_environment_instance();
+
+            FOREACH(ModuleInfo*, info, &env->modules.iterator, {
+                const DtComponentData* data = info->environment->get_component(name);
+                if (data)
+                    return data;
+            });
+
             return NULL;
         }
     }
 
-    if (component_data_by_name[idx] == NULL) {
-        return NULL;
+
+    if (component_data_by_name[idx] != NULL) {
+        return component_data_by_id[idx];
     }
 
-    return component_data_by_name[idx];
+    DtEnvironment* env = dt_environment_instance();
+
+    FOREACH(ModuleInfo*, info, &env->modules.iterator, {
+        const DtComponentData* data = info->environment->get_component(name);
+        if (data)
+            return data;
+    });
+
+    return NULL;
+}
+
+i32 dt_component_get_field_index(DtComponentData* data, const char* name) {
+    for (u16 i = 0; i < data->field_count; i++) {
+        if (strcmp(data->field_names[i], name) != 0) continue;
+        return i;
+    }
+    return -1;
 }
 
 const DtComponentData** dt_component_get_all(u16* size) {

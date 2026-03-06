@@ -4,6 +4,7 @@
 #include <DtNumericalTypes.h>
 #include <stdio.h>
 #include "DtEcs.h"
+#include "ExecuteOrder.h"
 
 /**
  * @brief metadata of component and components field
@@ -22,6 +23,7 @@ typedef struct DtComponentData {
 
     u16 field_count;
     char** field_names;
+    char** field_types;
     u16* field_offsets;
     DtAttributeData** filed_attributes;
     u16* filed_attributes_count;
@@ -57,7 +59,8 @@ typedef struct DtComponentData {
                                                                                                    \
     static DtComponentData local_##component_name##_data;                                          \
                                                                                                    \
-    static __attribute__((constructor(101))) void component_name##_register_component(void) {        \
+    static __attribute__((                                                                         \
+        constructor(DT_ORDER_REGISTER))) void component_name##_register_component(void) {          \
         local_##component_name##_data = (DtComponentData) {                                        \
             .name = #component_name,                                                               \
             .attributes = component_name##_attrs,                                                  \
@@ -81,6 +84,7 @@ typedef struct DtComponentData {
                                                                                                    \
     static char* component_name##_field_names[] = {fields(DT_FIELD_NAME, component_name)};         \
     static u16 component_name##_field_offsets[] = {fields(DT_FIELD_OFFSET, component_name)};       \
+    static char* component_name##_field_typess[] = {fields(DT_FIELD_TYPE, component_name)};        \
                                                                                                    \
     fields(DT_FIELD_ATTRIBUTES_GENERATE, component_name);                                          \
                                                                                                    \
@@ -91,21 +95,28 @@ typedef struct DtComponentData {
                                                                                                    \
     static DtComponentData local_##component_name##_data;                                          \
                                                                                                    \
-    static __attribute__((constructor(101))) void component_name##_register_component(void) {        \
+    static __attribute__(constructor(DT_ORDER_REGISTER_COUNT)) void component_name##_add_count() { \
+        dt_component_increment_count();                                                            \
+    }                                                                                              \
+                                                                                                   \
+    static __attribute__((                                                                         \
+        constructor(DT_ORDER_REGISTER))) void component_name##_register_component(void) {          \
         local_##component_name##_data = (DtComponentData) {                                        \
-            .name = #component_name,                                                               \
-            .attributes = component_name##_attrs,                                                  \
+            .name = #component_name, .attributes = component_name##_attrs,                         \
             .attribute_count = component_name##_attrs_count,                                       \
             .field_count = 0 fields(DT_FIELD_COUNT, component_name),                               \
             .field_names = component_name##_field_names,                                           \
             .field_offsets = component_name##_field_offsets,                                       \
             .filed_attributes = component_name##_field_attrs,                                      \
             .filed_attributes_count = component_name##_field_attrs_count,                          \
+            .field_types = component_name##_field_typess;                                          \
             .component_size = sizeof(component_name),                                              \
         };                                                                                         \
         dt_register_component(&local_##component_name##_data);                                     \
     }                                                                                              \
     DtComponentData component_name##_data() { return local_##component_name##_data; }
+
+void dt_component_increment_count();
 
 /**
  * @brief register component in global pool
@@ -135,6 +146,8 @@ const DtComponentData* dt_component_get_data_by_id(u16 id);
  */
 const DtComponentData* dt_component_get_data_by_name(const char* name);
 
+i32 dt_component_get_field_index(DtComponentData* data, const char* name);
+
 // TODO: comments
 const DtComponentData** dt_component_get_all(u16* size);
 
@@ -150,7 +163,12 @@ typedef struct {
 // TODO: comments
 #define DT_REGISTER_UPDATE(system_name, new_func)                                                  \
     static DtUpdateData local_##system_name##_data;                                                \
-    static __attribute__((constructor(101))) void dt_##system_name##_register_update(void) {         \
+                                                                                                   \
+    static __attribute__(constructor(DT_ORDER_REGISTER_COUNT)) void system_name##_add_count() {    \
+        dt_update_increment_count();                                                               \
+    }                                                                                              \
+    static __attribute__((                                                                         \
+        constructor(DT_ORDER_REGISTER))) void dt_##system_name##_register_update(void) {           \
         local_##system_name##_data = (DtUpdateData) {                                              \
             .name = #system_name,                                                                  \
             .new = new_func,                                                                       \
@@ -167,6 +185,8 @@ const DtUpdateData* dt_update_get_data_by_name(const char* name);
 const DtUpdateData* dt_update_get_data_by_id(u16 id);
 // TODO: comments
 const DtUpdateData** dt_update_get_all(u16* size);
+// TODO:comments
+void dt_update_increment_count();
 
 // TODO: comments
 typedef struct {
@@ -181,12 +201,17 @@ typedef struct {
 // TODO: comments
 #define DT_REGISTER_DRAW(system_name, new_func)                                                    \
     static DtDrawData local_##system_name##_data;                                                  \
-    static __attribute__((constructor(101))) void dt_##system_name##_register_draw(void) {              \
+    static __attribute__(constructor(DT_ORDER_REGISTER_COUNT)) void system_name##_add_count() {    \
+        dt_draw_increment_count();                                                                 \
+    }                                                                                              \
+    static __attribute__((constructor(DT_ORDER_REGISTER))) void dt_##system_name##_register_draw(  \
+        void) {                                                                                    \
         local_##system_name##_data = (DtDrawData) {                                                \
             .name = #system_name,                                                                  \
             .new = new_func,                                                                       \
         };                                                                                         \
         dt_draw_register(&local_##system_name##_data);                                             \
+        dt_draw_increment_count();                                                                 \
     }                                                                                              \
     DtDrawData system_name##_data() { return local_##system_name##_data; }
 
@@ -198,5 +223,7 @@ const DtDrawData* dt_draw_get_data_by_name(const char* name);
 const DtDrawData* dt_draw_get_data_by_id(u16 id);
 // TODO: comments
 const DtDrawData** dt_draw_get_all(u16* size);
+// TODO: comments
+void dt_draw_increment_count();
 
 #endif /*COMPONENTS_HANDLER_H*/
