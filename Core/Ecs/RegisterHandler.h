@@ -59,8 +59,8 @@ typedef struct DtComponentData {
                                                                                                    \
     static DtComponentData local_##component_name##_data;                                          \
                                                                                                    \
-    static __attribute__((                                                                         \
-        constructor(DT_ORDER_REGISTER))) void component_name##_register_component(void) {          \
+    static __attribute__((constructor(DT_ORDER_REGISTER))) void                                    \
+    component_name##_register_component(void) {                                                    \
         local_##component_name##_data = (DtComponentData) {                                        \
             .name = #component_name,                                                               \
             .attributes = component_name##_attrs,                                                  \
@@ -95,21 +95,23 @@ typedef struct DtComponentData {
                                                                                                    \
     static DtComponentData local_##component_name##_data;                                          \
                                                                                                    \
-    static __attribute__(constructor(DT_ORDER_REGISTER_COUNT)) void component_name##_add_count() { \
+    static __attribute__((constructor(DT_ORDER_REGISTER_COUNT))) void                              \
+    component_name##_add_count() {                                                                 \
         dt_component_increment_count();                                                            \
     }                                                                                              \
                                                                                                    \
-    static __attribute__((                                                                         \
-        constructor(DT_ORDER_REGISTER))) void component_name##_register_component(void) {          \
+    static __attribute__((constructor(DT_ORDER_REGISTER))) void                                    \
+    component_name##_register_component(void) {                                                    \
         local_##component_name##_data = (DtComponentData) {                                        \
-            .name = #component_name, .attributes = component_name##_attrs,                         \
+            .name = #component_name,                                                               \
+            .attributes = component_name##_attrs,                                                  \
             .attribute_count = component_name##_attrs_count,                                       \
             .field_count = 0 fields(DT_FIELD_COUNT, component_name),                               \
             .field_names = component_name##_field_names,                                           \
             .field_offsets = component_name##_field_offsets,                                       \
             .filed_attributes = component_name##_field_attrs,                                      \
             .filed_attributes_count = component_name##_field_attrs_count,                          \
-            .field_types = component_name##_field_typess;                                          \
+            .field_types = component_name##_field_typess,                                          \
             .component_size = sizeof(component_name),                                              \
         };                                                                                         \
         dt_register_component(&local_##component_name##_data);                                     \
@@ -164,11 +166,11 @@ typedef struct {
 #define DT_REGISTER_UPDATE(system_name, new_func)                                                  \
     static DtUpdateData local_##system_name##_data;                                                \
                                                                                                    \
-    static __attribute__(constructor(DT_ORDER_REGISTER_COUNT)) void system_name##_add_count() {    \
+    static __attribute__((constructor(DT_ORDER_REGISTER_COUNT))) void system_name##_add_count() {    \
         dt_update_increment_count();                                                               \
     }                                                                                              \
-    static __attribute__((                                                                         \
-        constructor(DT_ORDER_REGISTER))) void dt_##system_name##_register_update(void) {           \
+    static __attribute__((constructor(DT_ORDER_REGISTER))) void                                    \
+    dt_##system_name##_register_update(void) {                                                     \
         local_##system_name##_data = (DtUpdateData) {                                              \
             .name = #system_name,                                                                  \
             .new = new_func,                                                                       \
@@ -201,7 +203,7 @@ typedef struct {
 // TODO: comments
 #define DT_REGISTER_DRAW(system_name, new_func)                                                    \
     static DtDrawData local_##system_name##_data;                                                  \
-    static __attribute__(constructor(DT_ORDER_REGISTER_COUNT)) void system_name##_add_count() {    \
+    static __attribute__((constructor(DT_ORDER_REGISTER_COUNT))) void system_name##_add_count() {    \
         dt_draw_increment_count();                                                                 \
     }                                                                                              \
     static __attribute__((constructor(DT_ORDER_REGISTER))) void dt_##system_name##_register_draw(  \

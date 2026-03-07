@@ -28,7 +28,7 @@ else ()
 endif ()
 
 set(CORE_SOURCES
-        Core/Collections/Collections.c
+        Core/Collections/Vec.c
         Core/Collections/Iterator.c
         Core/Ecs/DtEcsManager.c
         Core/Ecs/Entity.c
@@ -44,6 +44,7 @@ set(CORE_SOURCES
         Core/scheduler/SceneLoader.c
         Core/Collections/RbTree.c
         Core/scheduler/Environment.c
+        Core/scheduler/TypeParse.c
 )
 
 set(TEST_SOURCES
@@ -116,6 +117,7 @@ endif ()
 add_executable(Editor
         Editor/main_editor.c
         ${EDITOR_SOURCES}
+        Editor/raylib-nuklear.h
 )
 target_compile_definitions(Editor PRIVATE -DEDITOR)
 
@@ -169,6 +171,38 @@ endforeach ()
 target_include_directories(Game PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/Game"
 )
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(CJSON REQUIRED libcjson)
+pkg_check_modules(RAYLIB REQUIRED raylib)
+
+foreach (TARGET DtEngine DtEngineTest GameLibStatic GameLibShared Editor EditorLib Game)
+    if(TARGET ${TARGET})
+        target_include_directories(${TARGET} PRIVATE
+                ${CJSON_INCLUDE_DIRS}
+                ${RAYLIB_INCLUDE_DIRS}
+                ${CMAKE_CURRENT_SOURCE_DIR}/Editor
+        )
+
+        target_link_libraries(${TARGET} PRIVATE
+                ${CJSON_LDFLAGS}
+                ${RAYLIB_LDFLAGS}
+                m
+                ${CMAKE_DL_LIBS}
+        )
+    endif()
+endforeach ()
+
+if(TARGET Editor)
+    target_compile_definitions(Editor PRIVATE
+            -DRAYLIB_NUKLEAR_IMPLEMENTATION
+    )
+
+    target_include_directories(Editor PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/Editor
+    )
+endif()
+
 
 # ============ Линковка зависимостей ============
 foreach (TARGET DtEngineTest GameLibStatic GameLibShared Editor EditorLib)

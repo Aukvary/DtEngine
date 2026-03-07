@@ -1,6 +1,8 @@
 #ifndef LAZY_LOAD_H
 #define LAZY_LOAD_H
-#include "DtScheduler.h"
+#include <cjson/cJSON.h>
+
+
 #include "Ecs/RegisterHandler.h"
 
 #ifdef _WIN32
@@ -36,6 +38,9 @@
 
 // TODO: add comment
 typedef struct DtEnvironment DtEnvironment;
+
+//TODO: comment
+typedef void (*TypeParser)(cJSON* src, void* dst);
 
 // TODO: comments
 typedef struct {
@@ -109,7 +114,13 @@ void dt_module_unload(DtEnvironment* env, ModuleInfo* info);
 // TODO: comments
 DtEnvironment* dt_environment_instance(void);
 
-// TODO: comments
-DtRawEntity* dt_load_prefab(const char* path);
+//TODO: comments
+void dt_add_type_parser(const char* type, TypeParser parser);
+
+//TODO: comments
+void dt_link_type_parser(const char* type, const char* base_type);
+
+//TODO: comments
+void dt_parse_type(const char* type, cJSON* src, void* dst);
 
 #endif /*LAZY_LOAD_H*/

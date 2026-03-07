@@ -1,7 +1,7 @@
-#include "Collections.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "Collections.h"
 
 #include "DtAllocators.h"
 #include "DtNumericalTypes.h"

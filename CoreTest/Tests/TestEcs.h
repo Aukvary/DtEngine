@@ -13,7 +13,7 @@ typedef struct {
     X(int, data, name,                                                                             \
       (DtAttributeData) {                                                                          \
           .attribute_name = "test_attr",                                                           \
-          .data = &(TestAttribute) {.test_value = 100},                                             \
+          .data = &(TestAttribute) {.test_value = 100},                                            \
       })
 DT_DEFINE_COMPONENT(TestDataComponent1, TEST_DATA_COMPONENT_1);
 

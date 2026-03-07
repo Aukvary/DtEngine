@@ -19,7 +19,6 @@ static void dt_scene_parse_ecs_manager(cJSON* json_cfg, DtScene* scene);
 static void dt_scene_parse_update_systems(cJSON* systems, DtScene* scene);
 static void dt_scene_parse_draw_systems(cJSON* systems, DtScene* scene);
 static void dt_scene_parse_entities(cJSON* entities, DtScene* scene);
-static void dt_component_parse(cJSON* component, const DtComponentData* data, void* field_data);
 
 static u64 get_scene_hash(const char* name) {
     int hash = 2147483647;
@@ -41,7 +40,6 @@ static int is_scene(const char* filename) {
 
 void dt_add_scene(const char* path) {
     DtEnvironment* env = dt_environment_instance();
-#if defined(_WIN32) || defined(_WIN64)
     if (!is_scene(path)) {
         fprintf(stderr, "[DEBUG]File is not a scene or doesn't exist: %s\n", path);
         return;
@@ -70,24 +68,6 @@ void dt_add_scene(const char* path) {
     scene->name = name;
 
     dt_rb_tree_add(&env->scenes, scene, get_scene_hash(path));
-#else
-    DIR* dir = opendir(directory_path);
-    if (!dir) {
-        perror("opendir");
-        return;
-    }
-
-    struct dirent* entry;
-    while ((entry = readdir(dir)) != NULL) {
-        if (entry->d_type == DT_REG) {
-            if (is_scene(entry->d_name)) {
-                printf("%s\n", entry->d_name);
-            }
-        }
-    }
-
-    closedir(dir);
-#endif
 }
 
 static DtScene* dt_scene_parse(const char* path, DtEnvironment* env) {
@@ -99,7 +79,7 @@ static DtScene* dt_scene_parse(const char* path, DtEnvironment* env) {
 
     fseek(file, 0, SEEK_END);
 
-    i32 size = ftell(file);
+    i32 size = (i32) ftell(file);
     fseek(file, 0, SEEK_SET);
 
     char* scene_info = DT_STACK_ALLOC(size + 1);
@@ -255,37 +235,39 @@ static void dt_scene_parse_draw_systems(cJSON* systems, DtScene* scene) {
 }
 
 static void dt_scene_parse_entities(cJSON* entities, DtScene* scene) {
-    u16 count = cJSON_GetArraySize(entities);
+    const u16 count = cJSON_GetArraySize(entities);
     scene->entities = DT_CALLOC(count, sizeof(DtRawEntity));
-    cJSON* json_entity = NULL;
+    const cJSON* json_entity = NULL;
     cJSON_ArrayForEach(json_entity, entities) {
-        cJSON* components = cJSON_GetObjectItem(json_entity, "components");
+        const cJSON* components = cJSON_GetObjectItem(json_entity, "components");
 
-        DtEntity entity = dt_ecs_manager_new_entity(scene->manager);
-        cJSON* component = NULL;
+        const DtEntity entity = dt_ecs_manager_new_entity(scene->manager);
+        const cJSON* component = NULL;
         cJSON_ArrayForEach(component, components) {
             if (cJSON_IsString(component)) {
                 dt_ecs_manager_entity_add_component_by_name(scene->manager, entity,
                                                             cJSON_GetStringValue(component), NULL);
             } else {
-                char* name = cJSON_GetStringValue(cJSON_GetObjectItem(component, "name"));
-                cJSON* values = cJSON_GetObjectItem(component, "values");
+                const char* name = cJSON_GetStringValue(cJSON_GetObjectItem(component, "name"));
+                const cJSON* values = cJSON_GetObjectItem(component, "values");
                 const DtComponentData* data = dt_component_get_data_by_name(name);
                 void* instance = DT_STACK_ALLOC(data->component_size);
 
                 cJSON* value = NULL;
-                cJSON_ArrayForEach(value, values) { dt_component_parse(value, data, instance); }
+                cJSON_ArrayForEach(value, values) {
+                    const char* field_name = value->string;
+                    const i32 i = dt_component_get_field_index(data, field_name);
+                    if (i == -1)
+                        continue;
+
+                    u16 offset = data->field_offsets[i];
+                    const char* type = data->field_types[i];
+
+                    dt_parse_type(type, value, (u8*) instance + offset);
+                    dt_ecs_manager_entity_add_component_by_name(
+                        scene->manager, entity, cJSON_GetStringValue(component), instance);
+                }
             }
         }
     }
-}
-
-static void dt_component_parse(cJSON* component, const DtComponentData* data, void* field_data) {
-    const char* field_name = component->string;
-    i32 i = dt_component_get_field_index(data, field_name);
-    if (i == -1)
-        return;
-
-    u16 offset = data->field_offsets[i];
-    char* type = data->field_types[i];
 }

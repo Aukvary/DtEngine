@@ -1,7 +1,7 @@
 #include "Collections/Collections.h"
 #include "DtAllocators.h"
-#include "RuntimeScheduler.h"
 #include "ExecuteOrder.h"
+#include "RuntimeScheduler.h"
 
 static DtEnvironment environment;
 
@@ -96,7 +96,3 @@ void dt_module_unload(DtEnvironment* env, ModuleInfo* info) {
     dt_rb_tree_remove(&env->modules, get_hash(info->name));
     DT_LIB_CLOSE(info->handle);
 }
-
-void dt_add_scenes(const char* directory) {}
-
-void dt_add_scene(const char* path) {}
