@@ -4,6 +4,8 @@ project(Double_Trouble C)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+set(PKG_CONFIG_PATH C:/msys64/clang64/lib/pkgconfig;C:/msys64/mingw64/lib/pkgconfig)
+
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(LINUX TRUE)
 endif ()
@@ -117,7 +119,6 @@ endif ()
 add_executable(Editor
         Editor/main_editor.c
         ${EDITOR_SOURCES}
-        Editor/raylib-nuklear.h
 )
 target_compile_definitions(Editor PRIVATE -DEDITOR)
 
@@ -176,24 +177,32 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(CJSON REQUIRED libcjson)
 pkg_check_modules(RAYLIB REQUIRED raylib)
 
-foreach (TARGET DtEngine DtEngineTest GameLibStatic GameLibShared Editor EditorLib Game)
-    if(TARGET ${TARGET})
+foreach (TARGET DtEngine DtEngineTest GameLibStatic GameLibShared EditorLib Editor Game)
+    if (TARGET ${TARGET})
         target_include_directories(${TARGET} PRIVATE
                 ${CJSON_INCLUDE_DIRS}
                 ${RAYLIB_INCLUDE_DIRS}
-                ${CMAKE_CURRENT_SOURCE_DIR}/Editor
         )
 
         target_link_libraries(${TARGET} PRIVATE
-                ${CJSON_LDFLAGS}
-                ${RAYLIB_LDFLAGS}
-                m
-                ${CMAKE_DL_LIBS}
+                ${CJSON_LINK_LIBRARIES}
+                ${RAYLIB_LINK_LIBRARIES}
         )
-    endif()
+
+        if (WIN32)
+            target_link_libraries(${TARGET} PRIVATE
+                    winmm
+                    gdi32
+            )
+        else ()
+            target_link_libraries(${TARGET} PRIVATE
+                    m
+            )
+        endif ()
+    endif ()
 endforeach ()
 
-if(TARGET Editor)
+if (TARGET Editor)
     target_compile_definitions(Editor PRIVATE
             -DRAYLIB_NUKLEAR_IMPLEMENTATION
     )
@@ -201,7 +210,7 @@ if(TARGET Editor)
     target_include_directories(Editor PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/Editor
     )
-endif()
+endif ()
 
 
 # ============ Линковка зависимостей ============

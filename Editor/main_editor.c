@@ -1,7 +1,5 @@
 #include "Ecs/RegisterHandler.h"
-
 #include "raylib.h"
-
 #define RAYLIB_NUKLEAR_INCLUDE_DEFAULT_FONT
 #include "raylib-nuklear.h"
 

@@ -31,7 +31,7 @@ DtEntityInfo dt_entity_info_new(DtEcsManager* manager, const DtEntity id, u16 co
 
         .id = id,
 
-        .components = calloc(component_count, sizeof(u16)),
+        .components = DT_CALLOC(component_count, sizeof(u16)),
         .component_size = component_count,
         .component_count = 0,
 
@@ -49,7 +49,8 @@ DtEntityInfo dt_entity_info_new(DtEcsManager* manager, const DtEntity id, u16 co
                 .next = entity_info_children_next,
             },
 
-        .gen = 1,
+        .alive = true,
+        .gen = 0,
     };
 }
 
@@ -57,7 +58,8 @@ void dt_entity_info_reuse(DtEntityInfo* info) {
     if (info->gen > 0)
         return;
 
-    info->gen = -info->gen + 1;
+    info->gen++;
+    info->alive = true;
 
     info->component_count = info->component_count;
     info->children_count = 0;
@@ -127,7 +129,7 @@ void dt_entity_info_remove_all_children(DtEntityInfo* info) {
 
 void dt_entity_info_add_component(DtEntityInfo* info, const u16 id) {
     for (int i = 0; i < info->component_count + 1; i++) {
-        if (info->components[i] == id)
+        if (info->components[i] == id && info->component_count != i)
             return;
 
         if (i == info->component_size) {
@@ -216,7 +218,7 @@ void dt_entity_info_kill(DtEntityInfo* info) {
 
     dt_entity_info_remove_all_children(info);
     dt_ecs_manager_remove_child(info->manager, info->parent, info->id);
-    info->gen *= -1;
+    info->alive = false;
 }
 
 static void entity_info_children_start(void* data) {

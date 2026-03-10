@@ -13,19 +13,28 @@ static void component_pool_remove(void* pool, DtEntity entity);
 static void component_pool_resize(void* pool, u16 new_size);
 static void component_pool_free(void* pool);
 
+//TODO: split decl def
+static int get_hash(const char* name) {
+    int hash = 2147483647;
+    while (*name) {
+        hash ^= *name++;
+        hash *= 314159;
+    }
+    return hash;
+}
+
 DtEcsPool* dt_component_pool_new(const DtEcsManager* manager, const char* name,
-                                 u16 item_size, const DtResetItemHandler reset_handler,
+                                 const u16 item_size, const DtResetItemHandler reset_handler,
                                  const DtCopyItemHandler copy_handler) {
     DtComponentPool* pool = malloc(sizeof(DtComponentPool));
-
-    const int id = dt_component_get_data_by_name(name)->id;
+    const DtComponentData* component_data = dt_component_get_data_by_name(name);
 
     *pool = (DtComponentPool) {
         .pool =
             (DtEcsPool) {
                 .manager = manager,
                 .name = name,
-                .component_id = id,
+                .hash = component_data->hash,
                 .count = 0,
 
                 .data = pool,

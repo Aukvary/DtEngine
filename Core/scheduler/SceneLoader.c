@@ -245,7 +245,7 @@ static void dt_scene_parse_entities(cJSON* entities, DtScene* scene) {
         const cJSON* component = NULL;
         cJSON_ArrayForEach(component, components) {
             if (cJSON_IsString(component)) {
-                dt_ecs_manager_entity_add_component_by_name(scene->manager, entity,
+                dt_ecs_manager_entity_add_component(scene->manager, entity,
                                                             cJSON_GetStringValue(component), NULL);
             } else {
                 const char* name = cJSON_GetStringValue(cJSON_GetObjectItem(component, "name"));
@@ -264,7 +264,7 @@ static void dt_scene_parse_entities(cJSON* entities, DtScene* scene) {
                     const char* type = data->field_types[i];
 
                     dt_parse_type(type, value, (u8*) instance + offset);
-                    dt_ecs_manager_entity_add_component_by_name(
+                    dt_ecs_manager_entity_add_component(
                         scene->manager, entity, cJSON_GetStringValue(component), instance);
                 }
             }

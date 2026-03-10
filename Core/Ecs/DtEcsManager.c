@@ -129,12 +129,12 @@ DtEcsFilter* dt_mask_end(DtEcsMask mask) {
     mask.hash = 314519;
     for (int i = 0; i < mask.include_count; i++) {
         mask.hash += mask.include_pools[i];
-        mask.hash ^= mask.manager->pools[mask.include_pools[i]]->component_id;
+        mask.hash ^= mask.manager->pools[mask.include_pools[i]]->hash;
     }
 
     for (int i = 0; i < mask.exclude_count; i++) {
         mask.hash -= mask.exclude_pools[i];
-        mask.hash ^= mask.manager->pools[mask.exclude_pools[i]]->component_id;
+        mask.hash ^= mask.manager->pools[mask.exclude_pools[i]]->hash;
     }
 
     return get_filter(mask.manager, mask);
@@ -464,57 +464,35 @@ void dt_ecs_manager_clear_entity(const DtEcsManager* manager, const DtEntity ent
     dt_entity_info_clear(&manager->sparse_entities[entity]);
 }
 
-void dt_ecs_manager_entity_add_component_by_id(DtEcsManager* manager, const DtEntity entity,
-                                               u16 component_id, const void* data) {
-    if (manager->entities_ptr < entity || entity < 0)
-        return;
-    if (manager->sparse_entities[entity].gen < 0)
-        return;
-
-    DtEcsPool* pool = dt_ecs_manager_get_pool_by_id(manager, component_id);
-
-    dt_ecs_pool_add(pool, entity, data);
-}
-
-void dt_ecs_manager_entity_add_component_by_name(DtEcsManager* manager, const DtEntity entity,
+void dt_ecs_manager_entity_add_component(DtEcsManager* manager, const DtEntity entity,
                                                  const char* name, const void* data) {
     if (manager->entities_ptr < entity || entity < 0)
         return;
     if (manager->sparse_entities[entity].gen < 0)
         return;
 
-    DtEcsPool* pool = dt_ecs_manager_get_pool_by_name(manager, name);
+    DtEcsPool* pool = dt_ecs_manager_get_pool(manager, name);
 
     dt_ecs_pool_add(pool, entity, data);
 }
 
-void dt_ecs_manager_entity_remove_component_by_id(DtEcsManager* manager, const DtEntity entity,
-                                                  const u16 component_id) {
-    if (manager->entities_ptr < entity || entity < 0)
-        return;
-    if (manager->sparse_entities[entity].gen < 0)
-        return;
-
-    DtEcsPool* pool = dt_ecs_manager_get_pool_by_id(manager, component_id);
-    dt_ecs_pool_remove(pool, entity);
-}
-
-void dt_ecs_manager_entity_remove_component_by_name(DtEcsManager* manager, DtEntity entity,
+void dt_ecs_manager_entity_remove_component(DtEcsManager* manager, DtEntity entity,
                                                     const char* name) {
     if (manager->entities_ptr < entity || entity < 0)
         return;
     if (manager->sparse_entities[entity].gen < 0)
         return;
 
-    DtEcsPool* pool = dt_ecs_manager_get_pool_by_name(manager, name);
+    DtEcsPool* pool = dt_ecs_manager_get_pool(manager, name);
     dt_ecs_pool_remove(pool, entity);
 }
 
 void dt_ecs_manager_add_pool(DtEcsManager* manager, DtEcsPool* pool) {
-    size_t idx = pool->component_id % manager->pools_table_size;
+    const u64 hash = pool->hash;
+    size_t idx = hash % manager->pools_table_size;
     const size_t start = idx;
     while (manager->pools_table[idx] != NULL) {
-        if (pool->component_id == manager->pools_table[idx]->component_id)
+        if (hash == manager->pools_table[idx]->hash)
             return;
 
         idx = (idx + 1) % manager->pools_table_size;
@@ -525,29 +503,29 @@ void dt_ecs_manager_add_pool(DtEcsManager* manager, DtEcsPool* pool) {
         }
     }
 
-    idx = pool->component_id % manager->pools_table_size;
-
     DT_VEC_ADD(manager->pools, pool);
     manager->pools_table[idx] = pool;
     pool->ecs_manager_id = dt_vec_count(manager->pools) - 1;
 }
 
-DtEcsPool* dt_ecs_manager_get_pool_by_id(DtEcsManager* manager, const u16 component_id) {
-    size_t idx = component_id % manager->pools_table_size;
+DtEcsPool* dt_ecs_manager_get_pool(DtEcsManager* manager, const char* name) {
+    const DtComponentData* data = dt_component_get_data_by_name(name);
+    const u64 hash = data->hash;
+    size_t idx = hash % manager->pools_table_size;
     const size_t start = idx;
 
     while (manager->pools_table[idx] != NULL &&
-           component_id != manager->pools_table[idx]->component_id) {
+           hash != manager->pools_table[idx]->hash) {
         idx = (idx + 1) % manager->pools_table_size;
         if (idx == start) {
-            DtEcsPool* pool = dt_ecs_pool_new_by_id(manager, component_id);
+            DtEcsPool* pool = dt_ecs_pool_new_by_name(manager, name);
             dt_ecs_manager_add_pool(manager, pool);
             return pool;
         }
     }
 
     if (manager->pools_table[idx] == NULL) {
-        DtEcsPool* pool = dt_ecs_pool_new_by_id(manager, component_id);
+        DtEcsPool* pool = dt_ecs_pool_new_by_name(manager, name);
         manager->pools_table[idx] = pool;
         DT_VEC_ADD(manager->pools, pool);
         pool->ecs_manager_id = dt_vec_count(manager->pools) - 1;
@@ -555,10 +533,6 @@ DtEcsPool* dt_ecs_manager_get_pool_by_id(DtEcsManager* manager, const u16 compon
     }
 
     return manager->pools_table[idx];
-}
-
-DtEcsPool* dt_ecs_manager_get_pool_by_name(DtEcsManager* manager, const char* name) {
-    return dt_ecs_manager_get_pool_by_id(manager, dt_component_get_data_by_name(name)->id);
 }
 
 static void ecs_manager_resize_pools(DtEcsManager* manager) {
@@ -604,7 +578,7 @@ static void ecs_manager_resize_pools(DtEcsManager* manager) {
            (manager->pools_table_size - old_size) * sizeof(DT_VEC(DtEcsFilter*)));
 
     for (int i = 0; i < old_size; i++) {
-        u16 idx = old_pools[i]->component_id % manager->pools_table_size;
+        u16 idx = old_pools[i]->hash % manager->pools_table_size;
 
         while (manager->pools_table[idx] != NULL) {
             idx = (1 + idx) % manager->pools_table_size;

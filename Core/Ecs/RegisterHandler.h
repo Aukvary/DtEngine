@@ -20,6 +20,7 @@ typedef struct {
 typedef struct DtComponentData {
     char* name;
     u16 id;
+    u64 hash;
 
     u16 field_count;
     char** field_names;
@@ -58,9 +59,13 @@ typedef struct DtComponentData {
     static DtAttributeData component_name##_attrs[] = {__VA_ARGS__};                               \
                                                                                                    \
     static DtComponentData local_##component_name##_data;                                          \
+    static                                                                                         \
+        __attribute__((constructor(DT_ORDER_REGISTER_COUNT))) void component_name##_add_count() {  \
+        dt_component_increment_count();                                                            \
+    }                                                                                              \
                                                                                                    \
-    static __attribute__((constructor(DT_ORDER_REGISTER))) void                                    \
-    component_name##_register_component(void) {                                                    \
+    static __attribute__((                                                                         \
+        constructor(DT_ORDER_REGISTER))) void component_name##_register_component(void) {          \
         local_##component_name##_data = (DtComponentData) {                                        \
             .name = #component_name,                                                               \
             .attributes = component_name##_attrs,                                                  \
@@ -95,13 +100,13 @@ typedef struct DtComponentData {
                                                                                                    \
     static DtComponentData local_##component_name##_data;                                          \
                                                                                                    \
-    static __attribute__((constructor(DT_ORDER_REGISTER_COUNT))) void                              \
-    component_name##_add_count() {                                                                 \
+    static                                                                                         \
+        __attribute__((constructor(DT_ORDER_REGISTER_COUNT))) void component_name##_add_count() {  \
         dt_component_increment_count();                                                            \
     }                                                                                              \
                                                                                                    \
-    static __attribute__((constructor(DT_ORDER_REGISTER))) void                                    \
-    component_name##_register_component(void) {                                                    \
+    static __attribute__((                                                                         \
+        constructor(DT_ORDER_REGISTER))) void component_name##_register_component(void) {          \
         local_##component_name##_data = (DtComponentData) {                                        \
             .name = #component_name,                                                               \
             .attributes = component_name##_attrs,                                                  \
@@ -166,11 +171,11 @@ typedef struct {
 #define DT_REGISTER_UPDATE(system_name, new_func)                                                  \
     static DtUpdateData local_##system_name##_data;                                                \
                                                                                                    \
-    static __attribute__((constructor(DT_ORDER_REGISTER_COUNT))) void system_name##_add_count() {    \
+    static __attribute__((constructor(DT_ORDER_REGISTER_COUNT))) void system_name##_add_count() {  \
         dt_update_increment_count();                                                               \
     }                                                                                              \
-    static __attribute__((constructor(DT_ORDER_REGISTER))) void                                    \
-    dt_##system_name##_register_update(void) {                                                     \
+    static __attribute__((                                                                         \
+        constructor(DT_ORDER_REGISTER))) void dt_##system_name##_register_update(void) {           \
         local_##system_name##_data = (DtUpdateData) {                                              \
             .name = #system_name,                                                                  \
             .new = new_func,                                                                       \
@@ -203,7 +208,7 @@ typedef struct {
 // TODO: comments
 #define DT_REGISTER_DRAW(system_name, new_func)                                                    \
     static DtDrawData local_##system_name##_data;                                                  \
-    static __attribute__((constructor(DT_ORDER_REGISTER_COUNT))) void system_name##_add_count() {    \
+    static __attribute__((constructor(DT_ORDER_REGISTER_COUNT))) void system_name##_add_count() {  \
         dt_draw_increment_count();                                                                 \
     }                                                                                              \
     static __attribute__((constructor(DT_ORDER_REGISTER))) void dt_##system_name##_register_draw(  \

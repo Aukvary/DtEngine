@@ -11,9 +11,7 @@ static int id_counter = 0;
 static const DtComponentData** component_data_by_id = NULL;
 static const DtComponentData** component_data_by_name = NULL;
 
-void dt_component_increment_count() {
-    size++;
-}
+void dt_component_increment_count() { size++; }
 
 static int dt_component_get_hash(const char* name) {
     int hash = 2147483647;
@@ -25,17 +23,16 @@ static int dt_component_get_hash(const char* name) {
 }
 
 void dt_register_component(DtComponentData* data) {
-     if (!size) size = 107ULL;
+    if (!size)
+        size = 107ULL;
     if (!component_data_by_id) {
         component_data_by_id = DT_CALLOC(size, sizeof(DtComponentData*));
         component_data_by_name = DT_CALLOC(size, sizeof(DtComponentData*));
     }
 
     data->id = id_counter++;
-
-    component_data_by_id[data->id] = data;
-
-    u64 idx = dt_component_get_hash(data->name) % size;
+    data->hash = dt_component_get_hash(data->name);
+    u64 idx = data->hash % size;
     const u64 start = idx;
     while (component_data_by_name[idx] != NULL) {
         if (strcmp(data->name, component_data_by_name[idx]->name) == 0)
@@ -49,6 +46,7 @@ void dt_register_component(DtComponentData* data) {
     }
 
     component_data_by_name[idx] = data;
+    component_data_by_id[data->id] = data;
     printf("[DEBUD]%s component was registered with id %d\n", data->name, data->id);
 }
 
@@ -82,7 +80,7 @@ const DtComponentData* dt_component_get_data_by_name(const char* name) {
 
 
     if (component_data_by_name[idx] != NULL) {
-        return component_data_by_id[idx];
+        return component_data_by_name[idx];
     }
 
     DtEnvironment* env = dt_environment_instance();
@@ -98,7 +96,8 @@ const DtComponentData* dt_component_get_data_by_name(const char* name) {
 
 i32 dt_component_get_field_index(const DtComponentData* data, const char* name) {
     for (u16 i = 0; i < data->field_count; i++) {
-        if (strcmp(data->field_names[i], name) != 0) continue;
+        if (strcmp(data->field_names[i], name) != 0)
+            continue;
         return i;
     }
     return -1;

@@ -15,6 +15,7 @@
 
 typedef u16 DtEntity;
 #define DT_ENTITY_NULL (0xFFFF)
+#define DT_KILLED_ENTITY (0xFFFF)
 
 /*=============================================================================
  *                        Определения типов и структур
@@ -61,6 +62,7 @@ typedef struct {
     DtIterator children_iterator;
     u16 children_iterator_ptr;
 
+    bool alive;
     u16 gen;
 } DtEntityInfo;
 
@@ -184,7 +186,7 @@ typedef struct {
     PoolType type;
 
     const char* name;
-    u16 component_id;
+    u64 hash;
     u16 ecs_manager_id;
 
     void* data;
@@ -245,7 +247,7 @@ typedef struct {
  *============================================================================*/
 
 DtEcsPool* dt_ecs_pool_new(const DtEcsManager* manager, const char* name, u16 size);
-DtEcsPool* dt_ecs_pool_new_by_id(const DtEcsManager* manager, u16 id);
+DtEcsPool* dt_ecs_pool_new_by_name(const DtEcsManager* manager, const char* name);
 DtEcsPool* dt_component_pool_new(const DtEcsManager* manager, const char* name, u16 size,
                                  DtResetItemHandler reset_handler, DtCopyItemHandler copy_handler);
 DtEcsPool* dt_tag_pool_new(const DtEcsManager* manager, const char* name);
@@ -342,13 +344,13 @@ struct DtEcsManager {
  * @param T Тип компонента
  * @note Если менеджер не имеет пула типа T, создается новый пул
  */
-#define DT_ECS_MANAGER_GET_POOL(manager, T) ({ dt_ecs_manager_get_pool_by_name((manager), #T); })
+#define DT_ECS_MANAGER_GET_POOL(manager, T) ({ dt_ecs_manager_get_pool((manager), #T); })
 
 #define DT_ECS_MANAGER_ADD_TO_POOL(manager, T, entity, data)                                       \
-    ({ dt_ecs_manager_entity_add_component_by_name(manager, entity, #T, data); })
+    ({ dt_ecs_manager_entity_add_component(manager, entity, #T, data); })
 
 #define DT_ECS_MANAGER_REMOVE_FROM_POOL(manager, T, entity)                                        \
-    ({ dt_ecs_manager_entity_remove_component_by_name(manager, entity, #T); })
+    ({ dt_ecs_manager_entity_remove_component(manager, entity, #T); })
 
 /**
  * @brief Возвращает маску с типом T по умолчанию
@@ -396,18 +398,13 @@ uint16_t dt_ecs_manager_get_entity_gen(const DtEcsManager* manager, DtEntity ent
 void dt_ecs_manager_copy_entity(const DtEcsManager* manager, DtEntity dst, DtEntity src);
 void dt_ecs_manager_reset_entity(const DtEcsManager* manager, DtEntity entity);
 void dt_ecs_manager_clear_entity(const DtEcsManager* manager, DtEntity entity);
-void dt_ecs_manager_entity_add_component_by_id(DtEcsManager* manager, DtEntity entity,
-                                               u16 component_id, const void* data);
-void dt_ecs_manager_entity_add_component_by_name(DtEcsManager* manager, DtEntity entity,
-                                                 const char* name, const void* data);
-void dt_ecs_manager_entity_remove_component_by_id(DtEcsManager* manager, DtEntity entity,
-                                                  u16 component_id);
-void dt_ecs_manager_entity_remove_component_by_name(DtEcsManager* manager, DtEntity entity,
-                                                    const char* name);
+void dt_ecs_manager_entity_add_component(DtEcsManager* manager, DtEntity entity, const char* name,
+                                         const void* data);
+void dt_ecs_manager_entity_remove_component(DtEcsManager* manager, DtEntity entity,
+                                            const char* name);
 void dt_ecs_manager_kill_entity(DtEcsManager* manager, DtEntity entity);
 void dt_ecs_manager_add_pool(DtEcsManager* manager, DtEcsPool* pool);
-DtEcsPool* dt_ecs_manager_get_pool_by_id(DtEcsManager* manager, u16 component_id);
-DtEcsPool* dt_ecs_manager_get_pool_by_name(DtEcsManager* manager, const char* name);
+DtEcsPool* dt_ecs_manager_get_pool(DtEcsManager* manager, const char* name);
 void dt_on_entity_change(const DtEcsManager* manager, DtEntity entity, u16 ecs_manager_component_id,
                          bool added);
 void dt_ecs_manager_free(DtEcsManager* manager);

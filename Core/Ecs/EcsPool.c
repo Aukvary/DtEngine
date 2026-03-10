@@ -18,6 +18,14 @@ DtEcsPool* dt_ecs_pool_new_by_id(const DtEcsManager* manager, const u16 id) {
                : dt_tag_pool_new(manager, data->name);
 }
 
+DtEcsPool* dt_ecs_pool_new_by_name(const DtEcsManager* manager, const char* name) {
+    const DtComponentData* data = dt_component_get_data_by_name(name);
+
+    return data->component_size != 0
+        ? dt_component_pool_new(manager, data->name, data->component_size, NULL, NULL)
+               : dt_tag_pool_new(manager, data->name);
+}
+
 void dt_ecs_pool_add(DtEcsPool* pool, const DtEntity entity, const void* data) {
     if (pool->has(pool->data, entity))
         return;
