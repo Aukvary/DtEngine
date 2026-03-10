@@ -6,15 +6,15 @@
 - Архитектура: Entity Component System (ECS)
 - Графика: Raylib
 - Сборка: CMake
-- Зависимостии:
+- Зависимости:
   - [RayLib](https://github.com/raysan5/raylib) - для графики
   - [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear) - для отладки 
-  - [Nurlear-RayLib](https://github.com/RobLoach/raylib-nuklear) - биндинги для использования Nurlear c RayLib
+  - [Nuklear-Raylib](https://github.com/RobLoach/raylib-nuklear) - биндинги для использования Nurlear c RayLib
   - [cJSON](https://github.com/DaveGamble/cJSON) - для парсинга json'ов
 
 # Особенности
 - ECS-архитектура создана на основе [leoecslite](https://github.com/Leopotam/ecslite)
-- разделение на компонентов на компоненты и теги
+- Разделение компонентов на данные и теги
   - тег - просто метка не хранит никаких данных(занимает меньше памяти)
   - компонент - полноценный компонент, который хранит данные об объекте
 - Поддержка сборки под Windows и Linux
@@ -44,7 +44,7 @@ DT_ECS_MANAGER_ADD_TO_POOL(manager, NotExcComponent, e2, NULL);
 DT_ECS_MANAGER_ADD_TO_POOL(manager, ExcComponent, e3, NULL);
 
 FOREACH(DtEntity, e, &filter->entities.entities_iterator, { 
-  //проходимся по всем сущностям, у которых нет компонента ExcComponent(e1, e2)
+  //проходимся по всем сущностям, у которых нет компонента ExcComponent - e1, e2
 });
 ```
 
