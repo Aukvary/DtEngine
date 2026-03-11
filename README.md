@@ -3,6 +3,7 @@
 
 # Технологический стек
 - Язык: C (стандарт C11)
+- Компилятор: GCC/Clang
 - Архитектура: Entity Component System (ECS)
 - Графика: Raylib
 - Сборка: CMake
@@ -25,9 +26,9 @@
 
 # Пример использования
 ``` C
-DtEntity my_entity = dt_ecs_manager_new_entity(manager); //создаём новую сущность
+DtEntity my_entity = dt_ecs_manager_new_entity(manager); //создаём новую сущность - обычное число
 DT_ECS_MANAGER_ADD_TO_POOL(manager, TagPoolType, my_entity, NULL); //добавляем её в набор тегов типа TagPoolType
-DT_ECS_MANAGER_ADD_TO_POOL(manager, DataPoolType, my_entity, &(DataPoolType) {...});//добавляем её в набор компонентов типа DataPoolType
+DT_ECS_MANAGER_ADD_TO_POOL(manager, DataPoolType, my_entity, &(DataPoolType) {/*данные типа*/}); //добавляем её в набор компонентов типа DataPoolType
 ```
 
 ```C
@@ -36,15 +37,16 @@ DtEntity e2 = dt_ecs_manager_new_entity(manager);
 DtEntity e3 = dt_ecs_manager_new_entity(manager); 
 
 DtEcsMask mask = dt_mask_new(manager, 0, 0); //создание маски
-DT_MASK_EXC(mask, ExcComponent); //исключаем компонент ExcComponent
-DtEcsFilter* filter = dt_mask_end(mask); //создаём фильтр - набор сущностей, у которых нет компонента ExcComponent
+DT_MASK_INC(mask, IncComponent); //добавляем компонент IncComponent в маску
+DT_MASK_EXC(mask, ExcComponent); //исключаем компонент ExcComponent в маску
+DtEcsFilter* filter = dt_mask_end(mask); //создаём фильтр - набор сущностей, у которых есть компонент IncComponent нет компонента ExcComponent
 
-DT_ECS_MANAGER_ADD_TO_POOL(manager, NotExcComponent, e1, NULL);
-DT_ECS_MANAGER_ADD_TO_POOL(manager, NotExcComponent, e2, NULL);
-DT_ECS_MANAGER_ADD_TO_POOL(manager, ExcComponent, e3, NULL);
+//никак не меняем e1
+DT_ECS_MANAGER_ADD_TO_POOL(manager, IncComponent, e2, NULL); //добавляем IncComponent
+DT_ECS_MANAGER_ADD_TO_POOL(manager, ExcComponent, e3, NULL); //добавляем ExcComponent
 
 FOREACH(DtEntity, e, &filter->entities.entities_iterator, { 
-  //проходимся по всем сущностям, у которых нет компонента ExcComponent - e1, e2
+  //проходимся по всем сущностям, у которых есть компонент IncComponent нет компонента ExcComponent - e2
 });
 ```
 
