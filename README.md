@@ -158,8 +158,8 @@ FOREACH(DtEntity, e, &filter->entities.entities_iterator, {
 ```
 
 ## Systems
-`DtUpdateHandler` - отвечает за обработку цикла обновления 
-`DtUpdateSystem` - обёртка над функциями обновления
+- `DtUpdateHandler` - отвечает за обработку цикла обновления 
+- `DtUpdateSystem` - обёртка над функциями обновления
 ```C
 #include "Ecs/RegisterHandler.h"
 
