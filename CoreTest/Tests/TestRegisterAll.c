@@ -10,19 +10,19 @@ DT_REGISTER_TAG(TestEmptyComponent2);
 DT_REGISTER_COMPONENT(TestDataComponent1, TEST_DATA_COMPONENT_1);
 DT_REGISTER_COMPONENT(TestDataComponent2, TEST_DATA_COMPONENT_2);
 
-static void test_update_system_init(DtEcsManager* manager, void* data);
-static void test_update_system_update(void* data, DtUpdateContext* ctx);
-static void test_update_system_destroy(void* data);
+static void module_update_init(DtEcsManager* manager, void* data);
+static void module_update_update(void* data, DtUpdateContext* ctx);
+static void module_update_destroy(void* data);
 
-UpdateSystem* test_update_system_new() {
+UpdateSystem* module_update_new() {
     TestUpdate1* update = DT_MALLOC(sizeof(TestUpdate1));
 
     *update = (TestUpdate1) {
         .system =
             (UpdateSystem) {
-                .init = test_update_system_init,
-                .update = test_update_system_update,
-                .destroy = test_update_system_destroy,
+                .init = module_update_init,
+                .update = module_update_update,
+                .destroy = module_update_destroy,
                 .priority = 0,
                 .data = update,
             },
@@ -33,7 +33,7 @@ UpdateSystem* test_update_system_new() {
     return &update->system;
 }
 
-static void test_update_system_init(DtEcsManager* manager, void* data) {
+static void module_update_init(DtEcsManager* manager, void* data) {
     TestUpdate1* update = data;
 
     update->tag1_pool = DT_ECS_MANAGER_GET_POOL(manager, TestEmptyComponent1);
@@ -46,7 +46,7 @@ static void test_update_system_init(DtEcsManager* manager, void* data) {
     update->filter = dt_mask_end(mask);
 }
 
-static void test_update_system_update(void* data, DtUpdateContext* ctx) {
+static void module_update_update(void* data, DtUpdateContext* ctx) {
     TestUpdate1* update = data;
 
     FOREACH(DtEntity, e, &update->filter->entities.entities_iterator,
@@ -55,14 +55,14 @@ static void test_update_system_update(void* data, DtUpdateContext* ctx) {
             });
 }
 
-static void test_update_system_destroy(void* data) {}
+static void module_update_destroy(void* data) {}
 
-DT_REGISTER_UPDATE(TestUpdate1, test_update_system_new);
+DT_REGISTER_UPDATE(TestUpdate1, module_update_new);
 
 
-static void test_draw_system_init(DtEcsManager* manager, void* data);
-static void test_draw_system_draw(void* data);
-static void test_draw_system_destroy(void* data);
+static void module_draw_init(DtEcsManager* manager, void* data);
+static void module_draw_draw(void* data);
+static void module_draw_destroy(void* data);
 
 DrawSystem* test_draw_system_new() {
     TestDraw1* draw = DT_MALLOC(sizeof(TestDraw1));
@@ -70,9 +70,9 @@ DrawSystem* test_draw_system_new() {
     *draw = (TestDraw1) {
         .system =
             (DrawSystem) {
-                .init = test_draw_system_init,
-                .draw = test_draw_system_draw,
-                .destroy = test_draw_system_destroy,
+                .init = module_draw_init,
+                .draw = module_draw_draw,
+                .destroy = module_draw_destroy,
                 .priority = 0,
                 .data = draw,
             },
@@ -83,7 +83,7 @@ DrawSystem* test_draw_system_new() {
     return &draw->system;
 }
 
-static void test_draw_system_init(DtEcsManager* manager, void* data) {
+static void module_draw_init(DtEcsManager* manager, void* data) {
     TestDraw1* draw = data;
 
     draw->tag2_pool = DT_ECS_MANAGER_GET_POOL(manager, TestEmptyComponent2);
@@ -96,7 +96,7 @@ static void test_draw_system_init(DtEcsManager* manager, void* data) {
     draw->filter = dt_mask_end(mask);
 }
 
-static void test_draw_system_draw(void* data) {
+static void module_draw_draw(void* data) {
     TestDraw1* draw = data;
 
     FOREACH(DtEntity, e, &draw->filter->entities.entities_iterator,
@@ -105,6 +105,6 @@ static void test_draw_system_draw(void* data) {
             });
 }
 
-static void test_draw_system_destroy(void* data) {}
+static void module_draw_destroy(void* data) {}
 
 DT_REGISTER_DRAW(TestDraw1, test_draw_system_new);

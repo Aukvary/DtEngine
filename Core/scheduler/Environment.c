@@ -60,7 +60,7 @@ ModuleInfo* dt_module_load(DtEnvironment* env, const char* path) {
         *(DtEnvironmentHandle*) DT_LIB_GET(lib, DT_MODULE_DEINITIALIZE_STR);
 
     DtEnvironment* (*get_environment)(void) =
-        *(DtEnvironment * (**) (void) ) DT_LIB_GET(lib, "dt_environment_instance");
+        (DtEnvironment * (*) (void) ) DT_LIB_GET(lib, "dt_environment_instance");
 
     ModuleInfo* info = DT_MALLOC(sizeof(ModuleInfo));
 

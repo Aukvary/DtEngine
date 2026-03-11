@@ -59,6 +59,11 @@ set(TEST_SOURCES
         CoreTest/Tests/TestComponentRegister.c
         CoreTest/Tests/TestSystemsRegister.c
         CoreTest/Tests/TestSceneParse.c
+        CoreTest/Tests/TestModuleLoad.c
+)
+
+set(TEST_MODULE
+        CoreTest/TestModule/TestSource.c
 )
 
 set(GAME_SOURCES
@@ -84,8 +89,15 @@ add_executable(DtEngineTest
         ${TEST_SOURCES}
 )
 
+add_library(DtEngineTestModule SHARED ${TEST_MODULE})
+
 set_target_properties(DtEngineTest PROPERTIES
         OUTPUT_NAME "DtEngineTest"
+        RUNTIME_OUTPUT_DIRECTORY "${CORE_OUTPUT_DIR}"
+)
+
+set_target_properties(DtEngineTestModule PROPERTIES
+        OUTPUT_NAME "ModuleTest"
         RUNTIME_OUTPUT_DIRECTORY "${CORE_OUTPUT_DIR}"
 )
 
@@ -158,7 +170,7 @@ set_target_properties(Game PROPERTIES
 )
 
 # ============ Include директории ============
-foreach (TARGET DtEngine_Objects DtEngine DtEngineTest GameLibStatic GameLibShared Editor Game)
+foreach (TARGET DtEngine_Objects DtEngineTestModule DtEngine DtEngineTest GameLibStatic GameLibShared Editor Game)
     target_include_directories(${TARGET} PRIVATE
             "${CMAKE_CURRENT_SOURCE_DIR}/Core"
     )
@@ -178,7 +190,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(CJSON REQUIRED libcjson)
 pkg_check_modules(RAYLIB REQUIRED raylib)
 
-foreach (TARGET DtEngine DtEngineTest GameLibStatic GameLibShared EditorLib Editor Game)
+foreach (TARGET DtEngine DtEngineTestModule DtEngineTest DtEngineTestModule GameLibStatic GameLibShared EditorLib Editor Game)
     if (TARGET ${TARGET})
         target_include_directories(${TARGET} PRIVATE
                 ${CJSON_INCLUDE_DIRS}
@@ -215,15 +227,12 @@ endif ()
 
 
 # ============ Линковка зависимостей ============
-foreach (TARGET DtEngine_Objects DtEngineTest GameLibStatic GameLibShared Editor EditorLib)
-    if (DEBUG_ENABLED)
+if (DEBUG_ENABLED)
+    foreach (TARGET DtEngine_Objects DtEngineTest GameLibStatic GameLibShared Editor EditorLib)
         target_compile_definitions(${TARGET} PRIVATE -DDEBUG)
-    endif ()
-endforeach ()
-foreach (TARGET DtEngineTest GameLibStatic GameLibShared Editor EditorLib)
-    if (DEBUG_ENABLED)
-        target_compile_definitions(${TARGET} PRIVATE -DDEBUG)
-    endif ()
+    endforeach ()
+endif ()
+foreach (TARGET DtEngineTestModule DtEngineTest GameLibStatic GameLibShared Editor EditorLib)
     target_link_libraries(${TARGET} PRIVATE $<TARGET_OBJECTS:DtEngine_Objects>)
 endforeach ()
 target_link_libraries(GameLibShared PRIVATE EditorLib)

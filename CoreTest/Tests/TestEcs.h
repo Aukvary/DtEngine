@@ -43,6 +43,6 @@ void test_filter(void);
 void test_component_register(void);
 void test_systems_register(void);
 void test_scene_parse(void);
-void test_module_load(void); //TODO: implement
+void test_module_load(void);
 
 #endif /*ECS_MANAGER_TESTS_H*/

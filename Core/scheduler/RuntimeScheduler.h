@@ -110,7 +110,7 @@ ModuleInfo* dt_module_load(DtEnvironment* env, const char* path);
 void dt_module_unload(DtEnvironment* env, ModuleInfo* info);
 
 // TODO: comments
-DtEnvironment* dt_environment_instance(void);
+DT_EXPORT DtEnvironment* dt_environment_instance(void);
 
 //TODO: comments
 void dt_add_type_parser(const char* type, TypeParser parser);
