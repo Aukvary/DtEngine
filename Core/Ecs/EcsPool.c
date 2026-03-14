@@ -46,7 +46,7 @@ inline int dt_ecs_pool_has(const DtEcsPool* pool, const DtEntity entity) {
 }
 
 void dt_ecs_pool_reset(DtEcsPool* pool, DtEntity entity) {
-    if (pool->type != COMPONENT_POOL)
+    if (pool->type != DT_COMPONENT_POOL)
         return;
     if (!dt_ecs_pool_has(pool, entity))
         return;

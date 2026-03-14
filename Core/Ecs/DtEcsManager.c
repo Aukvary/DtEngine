@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -387,7 +386,7 @@ DtEntity* dt_ecs_manager_get_children(const DtEcsManager* manager, const DtEntit
 void dt_ecs_manager_kill_entity(DtEcsManager* manager, const DtEntity entity) {
     if (manager->entities_ptr <= entity || entity < 0)
         return;
-    if (manager->sparse_entities[entity].gen < 0)
+    if (!manager->sparse_entities[entity].alive)
         return;
 
     if (manager->recycled_ptr == manager->recycled_size) {
@@ -417,7 +416,7 @@ size_t dt_ecs_manager_get_entity_components_count(const DtEcsManager* manager,
                                                   const DtEntity entity) {
     if (manager->entities_ptr < entity || entity < 0)
         return 0;
-    if (manager->sparse_entities[entity].gen < 0)
+    if (!manager->sparse_entities[entity].alive)
         return 0;
 
     return manager->sparse_entities[entity].component_count;
@@ -426,7 +425,7 @@ size_t dt_ecs_manager_get_entity_components_count(const DtEcsManager* manager,
 uint16_t dt_ecs_manager_get_entity_gen(const DtEcsManager* manager, const DtEntity entity) {
     if (manager->entities_ptr < entity || entity < 0)
         return 0;
-    if (manager->sparse_entities[entity].gen < 0)
+    if (!manager->sparse_entities[entity].alive)
         return 0;
 
     return manager->sparse_entities[entity].gen;
@@ -436,12 +435,12 @@ void dt_ecs_manager_copy_entity(const DtEcsManager* manager, const DtEntity dst,
                                 const DtEntity src) {
     if (manager->entities_ptr < dst || dst < 0)
         return;
-    if (manager->sparse_entities[dst].gen < 0)
+    if (!manager->sparse_entities[dst].alive)
         return;
 
     if (manager->entities_ptr < src || src < 0)
         return;
-    if (manager->sparse_entities[src].gen < 0)
+    if (!manager->sparse_entities[src].alive)
         return;
 
     dt_entity_info_copy(&manager->sparse_entities[dst], &manager->sparse_entities[src]);
@@ -449,7 +448,7 @@ void dt_ecs_manager_copy_entity(const DtEcsManager* manager, const DtEntity dst,
 void dt_ecs_manager_reset_entity(const DtEcsManager* manager, const DtEntity entity) {
     if (manager->entities_ptr < entity || entity < 0)
         return;
-    if (manager->sparse_entities[entity].gen < 0)
+    if (!manager->sparse_entities[entity].alive)
         return;
 
     dt_entity_info_reset(&manager->sparse_entities[entity]);
@@ -458,7 +457,7 @@ void dt_ecs_manager_reset_entity(const DtEcsManager* manager, const DtEntity ent
 void dt_ecs_manager_clear_entity(const DtEcsManager* manager, const DtEntity entity) {
     if (manager->entities_ptr < entity || entity < 0)
         return;
-    if (manager->sparse_entities[entity].gen < 0)
+    if (!manager->sparse_entities[entity].alive)
         return;
 
     dt_entity_info_clear(&manager->sparse_entities[entity]);
@@ -468,7 +467,7 @@ void dt_ecs_manager_entity_add_component(DtEcsManager* manager, const DtEntity e
                                                  const char* name, const void* data) {
     if (manager->entities_ptr < entity || entity < 0)
         return;
-    if (manager->sparse_entities[entity].gen < 0)
+    if (!manager->sparse_entities[entity].alive)
         return;
 
     DtEcsPool* pool = dt_ecs_manager_get_pool(manager, name);
@@ -480,7 +479,7 @@ void dt_ecs_manager_entity_remove_component(DtEcsManager* manager, DtEntity enti
                                                     const char* name) {
     if (manager->entities_ptr < entity || entity < 0)
         return;
-    if (manager->sparse_entities[entity].gen < 0)
+    if (!manager->sparse_entities[entity].alive)
         return;
 
     DtEcsPool* pool = dt_ecs_manager_get_pool(manager, name);
@@ -650,7 +649,7 @@ static DtEcsFilter* get_filter(DtEcsManager* manager, const DtEcsMask mask) {
     }
 
     for (DtEntity i = 0; i < manager->entities_ptr; i++) {
-        if (manager->sparse_entities[i].gen > -1 && is_mask_compatible(manager, mask, i)) {
+        if (manager->sparse_entities[i].alive && is_mask_compatible(manager, mask, i)) {
             filter_add_entity(filter, i);
         }
     }
@@ -661,8 +660,17 @@ static DtEcsFilter* get_filter(DtEcsManager* manager, const DtEcsMask mask) {
 static void ecs_manager_resize_filters(DtEcsManager* manager) {
     u16 old_size = manager->filters_size;
     manager->filters_size = manager->filters_size ? manager->filters_size * 2 : 10;
+
     DtEcsFilter** old_filters = DT_STACK_ALLOC(sizeof(DtEcsFilter*) * old_size);
     memcpy(old_filters, manager->filters, sizeof(DtEcsFilter*) * old_size);
+
+    void* tmp = DT_REALLOC(manager->filters, sizeof(DtEcsFilter*) * manager->filters_size);
+    if (!tmp) {
+        printf("[DEBUG]\t Failed to allocate memory for filter`s pool\n");
+        exit(1);
+    }
+
+    manager->filters = tmp;
 
     for (int i = 0; i < old_size; i++) {
         u16 idx = old_filters[i]->mask.hash % manager->filters_size;
@@ -806,7 +814,7 @@ void dt_remove_tool_components(const DtEcsManager* manager) { remove_hierarchy_d
 
 static void remove_hierarchy_dirty_tag(const DtEcsManager* manager) {
     for (DtEntity i = 0; i < manager->entities_ptr; i++) {
-        if (manager->sparse_entities[i].gen < 0)
+        if (!manager->sparse_entities[i].alive)
             continue;
 
         dt_ecs_pool_remove(manager->hierarchy_dirty_pool, i);

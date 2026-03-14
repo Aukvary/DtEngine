@@ -7,6 +7,8 @@
 
 #include "DtNumericalTypes.h"
 
+#define DT_VEC_MAGIC 0x44745663
+
 /**
  * @brief struct for handle iteration with FOREACH macros
 
@@ -41,6 +43,7 @@ typedef struct {
             (iter)->next((iter)->enumerable);                                                      \
         }                                                                                          \
     })
+
 /**
  * @brief vector data
  */
@@ -118,7 +121,7 @@ void* dt_vec_new(size_t item_size, size_t capacity);
  */
 static DtVecHeader* dt_vec_header(void* data) {
     DtVecHeader* header = &((DtVecHeader*) data)[-1];
-    if (header->magic != 'DtVc') {
+    if (header->magic != DT_VEC_MAGIC) {
         printf("DtVecHeader magic number mismatch\n");
         exit(1);
     }

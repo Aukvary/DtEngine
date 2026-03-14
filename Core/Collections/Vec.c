@@ -39,7 +39,7 @@ void* dt_vec_new(const size_t item_size, const size_t capacity) {
     DtVecHeader* header = DT_MALLOC(sizeof(DtVecHeader) + item_size * capacity);
 
     *header = (DtVecHeader) {
-        .magic = 'DtVc',
+        .magic = DT_VEC_MAGIC,
         .element_size = item_size,
         .capacity = capacity,
         .count = 0,

@@ -120,7 +120,7 @@ typedef struct {
     DtEntity dense_size;
     DtEntity count;
 
-    DtEntity* sparce_entities;
+    DtEntity* sparse_entities;
     DtEntity sparse_size;
 
     DtEntity* recycle_entities;
@@ -173,7 +173,7 @@ typedef struct DtEcsManagerConfig {
  *                               Пул компонентов (EcsPool)
  *============================================================================*/
 
-typedef enum { TAG_POOL, COMPONENT_POOL } PoolType;
+typedef enum { DT_TAG_POOL, DT_COMPONENT_POOL } PoolType;
 
 /**
  * @brief Пул данных компонентов ECS
@@ -351,15 +351,6 @@ struct DtEcsManager {
 
 #define DT_ECS_MANAGER_REMOVE_FROM_POOL(manager, T, entity)                                        \
     ({ dt_ecs_manager_entity_remove_component(manager, entity, #T); })
-
-/**
- * @brief Возвращает маску с типом T по умолчанию
- * @param manager Менеджер, содержащий маску
- * @param T Тип маски по умолчанию
- */
-#define DT_GET_MASK(manager, T)                                                                    \
-    dt_mask_new(manager, manager->include_mask_count, manager->exclude_mask_count,                 \
-                (DT_ECS_MANAGER_GET_POOL(manager, T))->info)
 
 /**
  * @brief Включает тип T в маску

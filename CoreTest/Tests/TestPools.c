@@ -64,7 +64,7 @@ void test_pools(void) {
 
 void test_pool_1(void) {
     tag_pool = DT_ECS_MANAGER_GET_POOL(manager, TestEmptyComponent1);
-    assert(tag_pool->type == TAG_POOL);
+    assert(tag_pool->type == DT_TAG_POOL);
 
     dt_ecs_pool_add(tag_pool, e1, NULL);
     dt_ecs_pool_add(tag_pool, e2, NULL);
@@ -82,7 +82,7 @@ void test_pool_1(void) {
 
 void test_pool_2(void) {
     data_pool = DT_ECS_MANAGER_GET_POOL(manager, TestDataComponent1);
-    assert(data_pool->type == COMPONENT_POOL);
+    assert(data_pool->type == DT_COMPONENT_POOL);
 
     dt_ecs_pool_add(data_pool, e1, &(TestDataComponent1) {10});
     dt_ecs_pool_add(data_pool, e2, NULL);

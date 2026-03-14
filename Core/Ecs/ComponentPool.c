@@ -39,7 +39,7 @@ DtEcsPool* dt_component_pool_new(const DtEcsManager* manager, const char* name,
 
                 .data = pool,
 
-                .type = COMPONENT_POOL,
+                .type = DT_COMPONENT_POOL,
 
                 .add = component_pool_add,
                 .get = component_pool_get_item,

@@ -47,7 +47,7 @@ DtEcsPool* dt_tag_pool_new(const DtEcsManager* manager, const char* name) {
                 .hash = dt_component_get_data_by_name(name)->hash,
                 .data = pool,
 
-                .type = TAG_POOL,
+                .type = DT_TAG_POOL,
 
                 .add = tag_pool_add,
                 .get = tag_pool_get,
