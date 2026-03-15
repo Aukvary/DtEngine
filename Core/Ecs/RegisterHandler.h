@@ -43,7 +43,6 @@ typedef struct DtComponentData {
 #define DT_FIELD_SIZE(type, name, component_name, ...) sizeof(type),
 #define DT_FIELD_ATTRIBUTES_GENERATE(type, name, component_name, ...)                              \
     static DtAttributeData component_name##_##name##_attrs[] = {__VA_ARGS__};
-
 #define DT_FIELD_ATTRIBUTES(type, name, component_name, ...) component_name##_##name##_attrs,
 #define DT_FIELD_ATTRIBUTES_COUNT(type, name, component_name, ...)                                 \
     (sizeof((DtAttributeData[]) {__VA_ARGS__}) / sizeof(DtAttributeData)),
