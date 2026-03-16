@@ -207,6 +207,26 @@ DT_REGISTER_UPDATE(MyUpdate, my_update_new); //регестрируем сист
                                              //лучше делать в .c файле, так как создаёт статические глобальные переменные
 ```
 
+## Modules
+- `DtModuleInfo` - хранит информацию о модуле(компоненты, системы
+- `DtEnvironment` - хранит информацию о компонентах, системах и сценах
+``` C
+ModuleInfo* lib = dt_module_load(dt_environment_instance(), DT_LIB_NAME("./my_lib")); //загрузка библиотеки
+
+components = game_lib->environment->components; //получение всех компонентов
+components_count = game_lib->environment->components_count; //количество компонентов
+
+updates = game_lib->environment->updaters; //получение всех систем обновления
+updates_count = game_lib->environment->updaters_count; //количество систем обновления
+
+draws = game_lib->environment->drawers; //получение всех систем отрисовки
+draws_count = game_lib->environment->drawers_count; //количество систем отрисовки
+
+void* custom_data = DT_LIB_GET(lib->hadndler, "my_data_name"); //получение данных
+
+dt_module_unload(dt_environment_instance(), lib); //выгрузка библиотеки
+```
+
 # Сборка и запуск
 //TODO
 
