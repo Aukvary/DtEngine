@@ -1,8 +1,0 @@
-{
-  "update_systems": [
-    "HotKeyReloadSystem"
-  ],
-  "draw_systems": [
-    "HierarchyTreeSystem"
-  ]
-}
