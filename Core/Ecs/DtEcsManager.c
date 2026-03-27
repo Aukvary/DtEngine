@@ -509,6 +509,7 @@ void dt_ecs_manager_add_pool(DtEcsManager* manager, DtEcsPool* pool) {
 
 DtEcsPool* dt_ecs_manager_get_pool(DtEcsManager* manager, const char* name) {
     const DtComponentData* data = dt_component_get_data_by_name(name);
+    if (data == NULL) return NULL;
     const u64 hash = data->hash;
     size_t idx = hash % manager->pools_table_size;
     const size_t start = idx;

@@ -68,8 +68,8 @@ const DtComponentData* dt_component_get_data_by_name(const char* name) {
         if (idx == start) {
             DtEnvironment* env = dt_environment_instance();
 
-            FOREACH(ModuleInfo*, info, &env->modules.iterator, {
-                const DtComponentData* data = info->environment->get_component(name);
+            FOREACH(ModuleInfo, info, &env->modules.iterator, {
+                const DtComponentData* data = info.environment->get_component(name);
                 if (data)
                     return data;
             });

@@ -1,5 +1,4 @@
 set(EDITOR_SOURCES
-        Editor/UI/user_interface.c
         Editor/GameLibLink/GameLibLoader.c
         Editor/UI/Systems.c
 )

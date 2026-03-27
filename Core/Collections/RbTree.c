@@ -438,29 +438,52 @@ static DtRbNode* dt_rb_find_prev_inorder(DtRbNode* node) {
 }
 
 static void dt_rb_start(void* data) {
-    DtRbTree* tree = data;
+    DtRbTree* tree = (DtRbTree*)data;
+    if (tree->root == NULL) {
+        tree->iterator_node = NULL;
+        return;
+    }
     tree->iterator_node = dt_rb_find_leftmost(tree->root);
 }
 
-static void* dt_rb_current(void* data) { return ((DtRbTree*) data)->iterator_node; }
+static void* dt_rb_current(void* data) {
+    DtRbTree* tree = (DtRbTree*)data;
+    if (tree->iterator_node == NULL) {
+        return NULL;
+    }
 
-static bool dt_rb_has_current(void* data) { return ((DtRbTree*) data)->iterator_node != NULL; }
+    return tree->iterator_node->data;
+}
+
+static bool dt_rb_has_current(void* data) {
+    return ((DtRbTree*)data)->iterator_node != NULL;
+}
 
 static void dt_rb_next(void* data) {
-    DtRbTree* tree = data;
+    DtRbTree* tree = (DtRbTree*)data;
     if (tree->iterator_node != NULL) {
-        tree->iterator_node = dt_rb_find_next_inorder(tree->iterator_node);
+        DtRbNode* next = dt_rb_find_next_inorder(tree->iterator_node);
+        // Защита от зацикливания
+        if (next == tree->iterator_node) {
+            tree->iterator_node = NULL;
+            return;
+        }
+        tree->iterator_node = next;
     }
 }
 
 static void dt_rb_prev(void* data) {
-    DtRbTree* tree = data;
+    DtRbTree* tree = (DtRbTree*)data;
     if (tree->iterator_node != NULL) {
         tree->iterator_node = dt_rb_find_prev_inorder(tree->iterator_node);
     }
 }
 
 static void dt_rb_end(void* data) {
-    DtRbTree* tree = data;
+    DtRbTree* tree = (DtRbTree*)data;
+    if (tree->root == NULL) {
+        tree->iterator_node = NULL;
+        return;
+    }
     tree->iterator_node = dt_rb_find_rightmost(tree->root);
 }

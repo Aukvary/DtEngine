@@ -26,7 +26,7 @@ u16 updates_count;
 const DtDrawData** draws;
 u16 draws_count;
 
-DtScene* active_scene = NULL;
+const DtScene* game_scene = NULL;
 
 static void init_game_data() {
     components = game_lib->environment->components;

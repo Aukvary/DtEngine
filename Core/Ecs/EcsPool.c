@@ -27,6 +27,7 @@ DtEcsPool* dt_ecs_pool_new_by_name(const DtEcsManager* manager, const char* name
 }
 
 void dt_ecs_pool_add(DtEcsPool* pool, const DtEntity entity, const void* data) {
+    if (pool == NULL) return;
     if (pool->has(pool->data, entity))
         return;
 

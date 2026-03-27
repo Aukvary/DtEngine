@@ -5,6 +5,8 @@
 #include "scheduler/RuntimeScheduler.h"
 
 #define MAIN_SCENE_PATH "./main menu.dt.scene"
+#define GAME_SCENE_PATH "./game_scene.dt.scene"
+
 #define WINDOW_WIDTH 1200
 #define WINDOW_HEIGHT 800
 
@@ -13,6 +15,8 @@ DtUpdateContext update_ctx = (DtUpdateContext) {
     .delta_time = 0.2f,
     .fixed_delta_time = 0.2f,
 };
+
+extern const DtScene* game_scene;
 
 struct nk_context* ctx;
 struct nk_colorf bg;
@@ -26,6 +30,7 @@ static void deinitialize_window();
 int main(void) {
     initialize_main_scene();
     load_game_lib();
+    game_scene = dt_add_scene(GAME_SCENE_PATH);
     initialize_window();
 
 
