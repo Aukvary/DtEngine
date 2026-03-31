@@ -6,6 +6,7 @@ set(EDITOR_SOURCES
         Editor/UI/ManagePanel.c
         Editor/UI/MessagePanel.c
         Editor/UI/EditorApi.c
+        Editor/GameLibLink/GameSystemController.c
 )
 
 add_executable(Editor Editor/main_editor.c ${EDITOR_SOURCES})

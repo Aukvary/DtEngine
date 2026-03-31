@@ -39,7 +39,7 @@ typedef struct {
         T var;                                                                                     \
         while ((iter)->has_current((iter)->enumerable)) {                                          \
             var = *(T*) (iter)->current((iter)->enumerable);                                       \
-            block_code;                                                                            \
+            (block_code);                                                                            \
             (iter)->next((iter)->enumerable);                                                      \
         }                                                                                          \
     })

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "DtAllocators.h"
 #include "DtEcs.h"
 #include "RegisterHandler.h"
 
@@ -26,10 +27,11 @@ static int get_hash(const char* name) {
 DtEcsPool* dt_component_pool_new(const DtEcsManager* manager, const char* name,
                                  const u16 item_size, const DtResetItemHandler reset_handler,
                                  const DtCopyItemHandler copy_handler) {
-    DtComponentPool* pool = malloc(sizeof(DtComponentPool));
+    DtComponentPool* pool = DT_MALLOC(sizeof(DtComponentPool));
     const DtComponentData* component_data = dt_component_get_data_by_name(name);
 
     *pool = (DtComponentPool) {
+        .component_data = component_data,
         .pool =
             (DtEcsPool) {
                 .manager = manager,
@@ -65,6 +67,9 @@ DtEcsPool* dt_component_pool_new(const DtEcsManager* manager, const char* name,
 static void component_pool_add(void* pool, DtEntity entity, const void* data) {
     DtComponentPool* component_pool = pool;
     dt_entity_container_add(&component_pool->entities, entity, data);
+    if (component_pool->component_data->init) {
+        component_pool->component_data->init(component_pool_get_item(pool, entity));
+    }
 }
 
 static void* component_pool_get_item(const void* pool, DtEntity entity) {

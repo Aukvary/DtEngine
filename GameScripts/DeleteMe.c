@@ -4,7 +4,7 @@
 #include "EditorApi.h"
 
 DT_REGISTER_TAG(TestTag)
-DT_REGISTER_COMPONENT(GameType, GAME_TYPE)
+DT_REGISTER_COMPONENT(GameType, NULL, GAME_TYPE)
 
 #ifdef EDITOR
 DECLARE_EDITOR_FUNC_TABLE
@@ -12,11 +12,16 @@ DECLARE_EDITOR_FUNC_TABLE
 
 DT_DEFINE_MODULE("game", NULL, NULL)
 
-DT_EXPORT
-void test() {
+void dte_init() {
 #ifdef EDITOR
-    func_table.log("init");
-#else
-    printf("init\n");
+    func_table.log("init: %s", "init");
 #endif
 }
+
+void dte_deinit() {
+#ifdef EDITOR
+    func_table.log("deinit: %s", "deinit");
+#endif
+}
+
+DTE_DECLARE_EDITOR_FUNC(dte_init, dte_deinit)

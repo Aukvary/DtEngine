@@ -44,6 +44,37 @@ typedef struct DtEcsManager DtEcsManager;
 typedef struct DtEcsFilter DtEcsFilter;
 
 /**
+ * @brief metadata of component and components field
+ */
+typedef struct {
+    char* attribute_name;
+    void* data;
+} DtAttributeData;
+
+/**
+ * @brief data of serialized component
+ */
+typedef struct DtComponentData {
+    char* name;
+    u16 id;
+    u64 hash;
+
+    void (*init)(void*);
+
+    u16 field_count;
+    char** field_names;
+    char** field_types;
+    u16* field_offsets;
+    DtAttributeData** filed_attributes;
+    u16* filed_attributes_count;
+
+    u64 component_size;
+
+    DtAttributeData* attributes;
+    u8 attribute_count;
+} DtComponentData;
+
+/**
  * @brief Информация о сущности
  */
 typedef struct {
@@ -209,6 +240,7 @@ typedef struct {
 typedef struct {
     DtEcsPool pool;
     DtEntityContainer entities;
+    const DtComponentData* component_data;
 } DtComponentPool;
 
 

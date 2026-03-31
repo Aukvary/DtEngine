@@ -58,30 +58,36 @@ void load_game_lib() {
     game_lib = dt_module_load(dt_environment_instance(), DT_LIB_NAME(GAME_LIB_PATH));
     init_game_data();
     DtEFuncTable* game_lib_func_table = (DtEFuncTable*) DT_LIB_GET(game_lib->handle, "func_table");
+    void (*init)(void) = *(void (**)())(DtEFuncTable*) DT_LIB_GET(game_lib->handle, DTE_INIT_STR);
     if (game_lib_func_table) {
         *game_lib_func_table = func_table;
-        void (*func)(void) = (void (*)()) DT_LIB_GET(game_lib->handle, "test");
-        func();
     }
+
+    if (init) init();
 }
 
 void build_game_lib() { system(REBUILD_SCRIPT_PATH); }
 
 void reload_game_lib(bool rebuild) {
+    void (*deinit)(void) =
+        *(void (**)())(DtEFuncTable*) DT_LIB_GET(game_lib->handle, DTE_DEINIT_STR);
+    if (deinit) {
+        deinit();
+    }
+
     dt_module_unload(dt_environment_instance(), game_lib);
     if (rebuild) {
         build_game_lib();
     }
     game_lib = dt_module_load(dt_environment_instance(), DT_LIB_NAME(GAME_LIB_PATH));
     init_game_data();
-    DtEFuncTable* log_func_table = (DtEFuncTable*) DT_LIB_GET(game_lib->handle, "func_table");
-    if (log_func_table) {
-        log_func_table->log = dte_log;
-        log_func_table->warn = dte_warning_log;
-        log_func_table->error = dte_error_log;
-        void (*func)(void) = (void (*)()) DT_LIB_GET(game_lib->handle, "test");
-        func();
+    DtEFuncTable* game_lib_func_table = (DtEFuncTable*) DT_LIB_GET(game_lib->handle, "func_table");
+    void (*init)(void) = *(void (**)())(DtEFuncTable*) DT_LIB_GET(game_lib->handle, DTE_INIT_STR);
+    if (game_lib_func_table) {
+        *game_lib_func_table = func_table;
     }
+
+    if (init) init();
 }
 
 void save_game_scene() {

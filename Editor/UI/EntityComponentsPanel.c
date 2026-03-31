@@ -22,60 +22,81 @@ static DrawSystem* component_panel_new() {
 
     return system;
 }
+static void draw_component_fields(const DtComponentData* data, DtEntity entity, DtEcsPool* pool,
+                                  void* component_ptr) {
+    for (int j = 0; j < data->field_count; j++) {
+        bool hide = false;
+        for (int k = 0; k < data->filed_attributes_count[j]; k++) {
+            if (strcmp(data->filed_attributes[j][k].attribute_name, DTE_INSPECTOR_HIDE) == 0) {
+                hide = true;
+                break;
+            }
+        }
+
+        if (hide)
+            continue;
+
+        u8* field_addr = (u8*) component_ptr + data->field_offsets[j];
+        const char* field_type = data->field_types[j];
+        const char* field_name = data->field_names[j];
+
+        bool changed = dte_inspector_field_draw(field_type, field_name, field_addr);
+
+        if (!changed)
+            return;
+
+        for (int k = 0; k < data->filed_attributes_count[j]; k++) {
+            if (strcmp(data->filed_attributes[j][k].attribute_name, DTE_ON_FIELD_CHANGE) != 0)
+                continue;
+            void (*callback)(DtEcsPool*, DtEntity) = data->filed_attributes[j][k].data;
+            if (callback)
+                callback(pool, entity);
+        }
+    }
+}
+
+static void draw_single_component(DtEcsManager* manager, DtEntity entity, u16 pool_idx, int id) {
+    DtEcsPool* pool = manager->pools[pool_idx];
+    const char* comp_name = pool->name;
+    const DtComponentData* data = dt_component_get_data_by_name(comp_name);
+
+    if (!data)
+        return;
+
+    void* component_ptr = dt_ecs_pool_get(pool, entity);
+    if (!component_ptr)
+        return;
+
+    if (nk_tree_push_id(ctx, NK_TREE_TAB, comp_name, NK_MAXIMIZED, id)) {
+        draw_component_fields(data, entity, pool, component_ptr);
+
+        nk_layout_row_dynamic(ctx, 25, 1);
+        if (nk_button_label(ctx, "Remove Component")) {
+            dt_ecs_manager_entity_remove_component(manager, entity, comp_name);
+        }
+        nk_tree_pop(ctx);
+    }
+}
 
 static void component_panel_draw(void* _) {
-    float width = (float) GetScreenWidth();
-    float height = (float) GetScreenHeight();
-
     if (selected_entity == DT_ENTITY_NULL)
         return;
+
+    float width = (float) GetScreenWidth();
+    float height = (float) GetScreenHeight();
 
     char title[64];
     snprintf(title, sizeof(title), "Components (ID: %u)", selected_entity);
 
-    if (nk_begin(ctx, title, nk_rect(width - width / 5, height / 30, width / 5, height),
-                 NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_WINDOW_TITLE)) {
+    struct nk_rect bounds = nk_rect(width - width / 5, height / 30, width / 5, height);
+    nk_flags flags = NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_WINDOW_TITLE;
 
-        DtEntityInfo info = dt_ecs_manager_get_entity(game_scene->manager, selected_entity);
+    if (nk_begin(ctx, title, bounds, flags)) {
+        DtEcsManager* mgr = game_scene->manager;
+        DtEntityInfo info = dt_ecs_manager_get_entity(mgr, selected_entity);
 
         for (int i = 0; i < info.component_count; i++) {
-            const char* comp_name = game_scene->manager->pools[info.components[i]]->name;
-            const DtComponentData* component_data = dt_component_get_data_by_name(comp_name);
-
-            if (component_data == NULL)
-                continue;
-
-            DtEcsPool* pool = dt_ecs_manager_get_pool(game_scene->manager, comp_name);
-            void* component_ptr = dt_ecs_pool_get(pool, selected_entity);
-
-            if (component_ptr == NULL)
-                continue;
-
-            if (nk_tree_push_id(ctx, NK_TREE_TAB, comp_name, NK_MAXIMIZED, i)) {
-                for (int j = 0; j < component_data->field_count; j++) {
-                    bool hide = false;
-                    for (int k = 0; k < component_data->filed_attributes_count[j]; k++) {
-                        if (strcmp(component_data->filed_attributes[k]->attribute_name,
-                                   DTE_INSPECTOR_HIDE) == 0) {
-                            hide = true;
-                            break;
-                        }
-                    }
-                    if (hide) continue;
-                    u8* field_addr = (u8*) component_ptr + component_data->field_offsets[j];
-
-                    dte_inspector_field_draw(component_data->field_types[j],
-                                             component_data->field_names[j], field_addr);
-                }
-
-                nk_layout_row_dynamic(ctx, 25, 1);
-                if (nk_button_label(ctx, "Remove Component")) {
-                    dt_ecs_manager_entity_remove_component(game_scene->manager, selected_entity,
-                                                           comp_name);
-                }
-
-                nk_tree_pop(ctx);
-            }
+            draw_single_component(mgr, selected_entity, info.components[i], i);
         }
     }
     nk_end(ctx);
