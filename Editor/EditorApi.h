@@ -5,11 +5,21 @@
 
 #define DECLARE_EDITOR_FUNC_TABLE DT_EXPORT DtEFuncTable func_table;
 
-#define DTE_EDIT_DRAW "editor_draw"
-#define DTE_EDIT_UPDATE "editor_update"
+#define DTE_EDIT_DRAW_NAME "editor_draw"
+#define DTE_EDIT_DRAW(func)                                                                        \
+    (DtAttributeData) { .attribute_name = DTE_EDIT_DRAW_NAME, .data = func }
 
-#define DTE_INSPECTOR_HIDE "hide"
-#define DTE_ON_FIELD_CHANGE "on_field_change"
+#define DTE_EDIT_UPDATE_NAME "editor_update"
+#define DTE_EDIT_UPDATE(func)                                                                      \
+    (DtAttributeData) { .attribute_name = DTE_EDIT_UPDATE_NAME, .data = func }
+
+#define DTE_INSPECTOR_HIDE_NAME "hide"
+#define DTE_INSPECTOR_HIDE                                                                         \
+    (DtAttributeData) { .attribute_name = DTE_INSPECTOR_HIDE_NAME }
+
+#define DTE_ON_FIELD_CHANGE_NAME "on_field_change"
+#define DTE_ON_FIELD_CHANGE(func)                                                                  \
+    (DtAttributeData) { .attribute_name = DTE_ON_FIELD_CHANGE_NAME, .data = func }
 
 #define DTE_INIT dte_gl_init
 #define DTE_DEINIT dte_gl_deinit

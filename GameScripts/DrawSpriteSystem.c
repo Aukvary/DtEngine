@@ -19,11 +19,7 @@ void draw_sprite_init(DtEcsManager* manager, void* data);
 void draw_sprite_draw(void* data);
 void draw_sprite_destroy(void* data);
 
-DT_REGISTER_DRAW(DrawSprite, draw_sprite_new,
-                 (DtAttributeData) {
-                     .attribute_name = DTE_EDIT_DRAW,
-                     .data = draw_sprite_init,
-                 })
+DT_REGISTER_DRAW(DrawSprite, draw_sprite_new, DTE_EDIT_DRAW(draw_sprite_new))
 
 DrawSystem* draw_sprite_new() {
     DrawSpriteSystem* draw_sprite = DT_MALLOC(sizeof(DrawSpriteSystem));

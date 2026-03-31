@@ -1,6 +1,6 @@
 #include <limits.h>
-#include <raylib.h>
 #include <nuklear.h>
+#include <raylib.h>
 #include <string.h>
 #include "Collections/Collections.h"
 #include "DtAllocators.h"
@@ -72,15 +72,15 @@ static bool inspector_field_int(const char* name, void* dst) {
 
 static bool inspector_field_unsigned_int(const char* field, void* dst) {
     unsigned int* val = dst;
-    int temp = (int)*val;
+    int temp = (int) *val;
     nk_layout_row_dynamic(ctx, 20, 1);
     char label[64];
     snprintf(label, sizeof(label), "%s:", field);
     nk_label(ctx, label, NK_TEXT_LEFT);
 
     nk_property_int(ctx, "#", 0, &temp, INT_MAX, 1, 1.0f);
-    bool changed = (unsigned int)temp != *val;
-    *val = (unsigned int)temp;
+    bool changed = (unsigned int) temp != *val;
+    *val = (unsigned int) temp;
     return changed;
 }
 
@@ -93,8 +93,8 @@ static bool inspector_field_short(const char* field, void* dst) {
     nk_label(ctx, label, NK_TEXT_LEFT);
 
     nk_property_int(ctx, "#", SHRT_MIN, &temp, SHRT_MAX, 1, 1.0f);
-    bool changed = (short)temp != *val;
-    *val = (short)temp;
+    bool changed = (short) temp != *val;
+    *val = (short) temp;
     return changed;
 }
 
@@ -107,64 +107,64 @@ static bool inspector_field_unsigned_short(const char* field, void* dst) {
     nk_label(ctx, label, NK_TEXT_LEFT);
 
     nk_property_int(ctx, "#", 0, &temp, USHRT_MAX, 1, 1.0f);
-    bool changed = (unsigned short)temp != *val;
-    *val = (unsigned short)temp;
+    bool changed = (unsigned short) temp != *val;
+    *val = (unsigned short) temp;
     return changed;
 }
 
 static bool inspector_field_long(const char* field, void* dst) {
     long* val = dst;
-    double temp = (double)*val;
+    double temp = (double) *val;
     nk_layout_row_dynamic(ctx, 20, 1);
     char label[64];
     snprintf(label, sizeof(label), "%s:", field);
     nk_label(ctx, label, NK_TEXT_LEFT);
 
-    nk_property_double(ctx, "#", (double)LONG_MIN, &temp, (double)LONG_MAX, 1.0, 1.0f);
-    bool changed = (long)temp != *val;
-    *val = (long)temp;
+    nk_property_double(ctx, "#", (double) LONG_MIN, &temp, (double) LONG_MAX, 1.0, 1.0f);
+    bool changed = (long) temp != *val;
+    *val = (long) temp;
     return changed;
 }
 
 static bool inspector_field_unsigned_long(const char* field, void* dst) {
     unsigned long* val = dst;
-    double temp = (double)*val;
+    double temp = (double) *val;
     nk_layout_row_dynamic(ctx, 20, 1);
     char label[64];
     snprintf(label, sizeof(label), "%s:", field);
     nk_label(ctx, label, NK_TEXT_LEFT);
 
-    nk_property_double(ctx, "#", 0.0, &temp, (double)ULONG_MAX, 1.0, 1.0f);
-    bool changed = (unsigned long)temp != *val;
-    *val = (unsigned long)temp;
+    nk_property_double(ctx, "#", 0.0, &temp, (double) ULONG_MAX, 1.0, 1.0f);
+    bool changed = (unsigned long) temp != *val;
+    *val = (unsigned long) temp;
     return changed;
 }
 
 static bool inspector_field_long_long(const char* field, void* dst) {
     long long* val = dst;
-    double temp = (double)*val;
+    double temp = (double) *val;
     nk_layout_row_dynamic(ctx, 20, 1);
     char label[64];
     snprintf(label, sizeof(label), "%s:", field);
     nk_label(ctx, label, NK_TEXT_LEFT);
 
     nk_property_double(ctx, "#", -1e18, &temp, 1e18, 1.0, 1.0f);
-    bool changed = (long long)temp != *val;
-    *val = (long long)temp;
+    bool changed = (long long) temp != *val;
+    *val = (long long) temp;
     return changed;
 }
 
 static bool inspector_field_unsigned_long_long(const char* field, void* dst) {
     unsigned long long* val = dst;
-    double temp = (double)*val;
+    double temp = (double) *val;
     nk_layout_row_dynamic(ctx, 20, 1);
     char label[64];
     snprintf(label, sizeof(label), "%s:", field);
     nk_label(ctx, label, NK_TEXT_LEFT);
 
-    nk_property_double(ctx, "#", 0, &temp, (double)ULLONG_MAX, 1.0, 1.0f);
-    bool changed = (unsigned long long)temp != *val;
-    *val = (unsigned long long)temp;
+    nk_property_double(ctx, "#", 0, &temp, (double) ULLONG_MAX, 1.0, 1.0f);
+    bool changed = (unsigned long long) temp != *val;
+    *val = (unsigned long long) temp;
     return changed;
 }
 
@@ -178,8 +178,8 @@ static bool inspector_field_float(const char* field, void* dst) {
 
     nk_layout_row_dynamic(ctx, 20, 1);
     nk_property_double(ctx, "#", -1e18, &temp, 1e18, 1.0, 1.0f);
-    bool changed = (float)temp != *val;
-    *val = (float)temp;
+    bool changed = (float) temp != *val;
+    *val = (float) temp;
     return changed;
 }
 
@@ -208,13 +208,18 @@ static bool inspector_field_char_ptr(const char* field, void* dst) {
         (*str)[0] = '\0';
     }
 
-    int len = (int)strlen(*str);
-    int old_len = len;
+    int len = (int) strlen(*str);
 
-    nk_flags state = nk_edit_string(ctx, NK_EDIT_FIELD, *str, &len, 255, nk_filter_default);
+    nk_flags state =
+        nk_edit_string(ctx, NK_EDIT_FIELD | NK_EDIT_SIG_ENTER, *str, &len, 255, nk_filter_default);
     (*str)[len] = '\0';
 
-    return state & NK_EDIT_COMMITED;
+    if (state & NK_EDIT_COMMITED) {
+        nk_edit_unfocus(ctx);
+        return true;
+    }
+
+    return false;
 }
 
 static bool inspector_field_vector2(const char* field, void* dst) {
@@ -232,4 +237,3 @@ static bool inspector_field_vector2(const char* field, void* dst) {
 
     return (v->x != old.x || v->y != old.y);
 }
-

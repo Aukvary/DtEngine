@@ -24,10 +24,10 @@ static DrawSystem* component_panel_new() {
 }
 static void draw_component_fields(const DtComponentData* data, DtEntity entity, DtEcsPool* pool,
                                   void* component_ptr) {
-    for (int j = 0; j < data->field_count; j++) {
+    for (int i = 0; i < data->field_count; i++) {
         bool hide = false;
-        for (int k = 0; k < data->filed_attributes_count[j]; k++) {
-            if (strcmp(data->filed_attributes[j][k].attribute_name, DTE_INSPECTOR_HIDE) == 0) {
+        for (int j = 0; j < data->filed_attributes_count[i]; j++) {
+            if (strcmp(data->filed_attributes[i][j].attribute_name, DTE_INSPECTOR_HIDE_NAME) == 0) {
                 hide = true;
                 break;
             }
@@ -36,19 +36,19 @@ static void draw_component_fields(const DtComponentData* data, DtEntity entity, 
         if (hide)
             continue;
 
-        u8* field_addr = (u8*) component_ptr + data->field_offsets[j];
-        const char* field_type = data->field_types[j];
-        const char* field_name = data->field_names[j];
+        u8* field_addr = (u8*) component_ptr + data->field_offsets[i];
+        const char* field_type = data->field_types[i];
+        const char* field_name = data->field_names[i];
 
         bool changed = dte_inspector_field_draw(field_type, field_name, field_addr);
 
         if (!changed)
-            return;
+            continue;
 
-        for (int k = 0; k < data->filed_attributes_count[j]; k++) {
-            if (strcmp(data->filed_attributes[j][k].attribute_name, DTE_ON_FIELD_CHANGE) != 0)
+        for (int j = 0; j < data->filed_attributes_count[i]; j++) {
+            if (strcmp(data->filed_attributes[i][j].attribute_name, DTE_ON_FIELD_CHANGE_NAME) != 0)
                 continue;
-            void (*callback)(DtEcsPool*, DtEntity) = data->filed_attributes[j][k].data;
+            void (*callback)(DtEcsPool*, DtEntity) = data->filed_attributes[i][j].data;
             if (callback)
                 callback(pool, entity);
         }

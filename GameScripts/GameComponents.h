@@ -6,13 +6,14 @@
 
 void on_change_path_to_sprite(DtEcsPool* data, DtEntity entity);
 
-#define SPRITE(x, name)                                                                            \
-    x(char*, path_to_sprite, name,                                                                 \
-      (DtAttributeData) {                                                                          \
-          .attribute_name = DTE_ON_FIELD_CHANGE,                                                   \
-          .data = on_change_path_to_sprite,                                                      \
-      }) x(Texture2D, texture, name) x(Vector2, origin, name) x(Color, color, name)                \
-        x(Rectangle, source, name) x(bool, horizontal_flip, name) x(bool, vertical_flip, name)
+#define SPRITE(X, name)                                                                            \
+    X(char*, path_to_sprite, name, DTE_ON_FIELD_CHANGE(on_change_path_to_sprite))                  \
+    X(Texture2D, texture, name)                                                                    \
+    X(Vector2, origin, name)                                                                       \
+    X(Color, color, name)                                                                          \
+    X(Rectangle, source, name)                                                                     \
+    X(bool, horizontal_flip, name)                                                                 \
+    X(bool, vertical_flip, name)
 
 DT_DEFINE_COMPONENT(Sprite, SPRITE)
 
