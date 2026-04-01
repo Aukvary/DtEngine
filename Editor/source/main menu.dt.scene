@@ -1,8 +1,13 @@
 {
   "update_systems": [
-    "HotKeyReloadSystem"
+    "HotKeyReloadSystem",
+    "GameCameraSystem"
   ],
   "draw_systems": [
-    "HierarchyTreeSystem"
+    "HierarchyTreeSystem",
+    "ComponentPanelDraw",
+    "ManagerPanel",
+    "MessagePanel",
+    "GameLibDraw"
   ]
 }
