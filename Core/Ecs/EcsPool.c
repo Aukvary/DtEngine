@@ -6,28 +6,20 @@
 #include "RegisterHandler.h"
 
 DtEcsPool* dt_ecs_pool_new(const DtEcsManager* manager, const char* name, const u16 size) {
-    return size != 0 ? dt_component_pool_new(manager, name, size, NULL, NULL)
-                     : dt_tag_pool_new(manager, name);
-}
-
-DtEcsPool* dt_ecs_pool_new_by_id(const DtEcsManager* manager, const u16 id) {
-    const DtComponentData* data = dt_component_get_data_by_id(id);
-
-    return data->component_size != 0
-        ? dt_component_pool_new(manager, data->name, data->component_size, NULL, NULL)
-               : dt_tag_pool_new(manager, data->name);
+    return size != 0 ? dt_component_pool_new(manager, name, size) : dt_tag_pool_new(manager, name);
 }
 
 DtEcsPool* dt_ecs_pool_new_by_name(const DtEcsManager* manager, const char* name) {
     const DtComponentData* data = dt_component_get_data_by_name(name);
 
-    return data->component_size != 0
-        ? dt_component_pool_new(manager, data->name, data->component_size, NULL, NULL)
-               : dt_tag_pool_new(manager, data->name);
+    return data->component_size == 0
+               ? dt_tag_pool_new(manager, data->name)
+               : dt_component_pool_new(manager, data->name, data->component_size);
 }
 
 void dt_ecs_pool_add(DtEcsPool* pool, const DtEntity entity, const void* data) {
-    if (pool == NULL) return;
+    if (pool == NULL)
+        return;
     if (pool->has(pool->data, entity))
         return;
 
@@ -56,7 +48,8 @@ void dt_ecs_pool_reset(DtEcsPool* pool, DtEntity entity) {
 }
 
 void dt_ecs_pool_copy(DtEcsPool* pool, const DtEntity dst, const DtEntity src) {
-    if (!pool->has(pool->data, src)) return;
+    if (!pool->has(pool->data, src))
+        return;
 
     bool has = pool->has(pool->data, dst);
     pool->copy(pool->data, dst, src);

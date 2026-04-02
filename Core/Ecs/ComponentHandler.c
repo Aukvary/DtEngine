@@ -47,6 +47,25 @@ void dt_register_component(DtComponentData* data) {
 
     component_data_by_name[idx] = data;
     component_data_by_id[data->id] = data;
+
+    data->reset = NULL;
+    data->init = NULL;
+    data->copy = NULL;
+
+    for (int i = 0; i < data->attribute_count; i++) {
+        if (strcmp(data->attributes[i].attribute_name, DT_RESET_ATTR_TAG) == 0) {
+            data->reset = data->attributes[i].data;
+        }
+
+        if (strcmp(data->attributes[i].attribute_name, DT_INIT_ATTR_TAG) == 0) {
+            data->init = data->attributes[i].data;
+        }
+
+        if (strcmp(data->attributes[i].attribute_name, DT_COPY_ATTR_TAG) == 0) {
+            data->copy = data->attributes[i].data;
+        }
+    }
+
     printf("[DEBUD] %s component was registered with id %d\n", data->name, data->id);
 }
 

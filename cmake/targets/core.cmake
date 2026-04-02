@@ -16,6 +16,7 @@ set(CORE_SOURCES
         Core/Collections/RbTree.c
         Core/scheduler/Environment.c
         Core/scheduler/TypeParse.c
+        Core/Components/DtTransform2D.c
 )
 
 add_library(DtEngine_Objects OBJECT ${CORE_SOURCES})

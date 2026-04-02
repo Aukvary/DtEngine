@@ -69,19 +69,19 @@ static void camera_move() {
     }
 
     if (IsKeyDown(KEY_A)) {
-        camera.target.x -= speed;
+        camera.target.x -= speed * 0.5f;
     }
 
     if (IsKeyDown(KEY_S)) {
-        camera.target.y += speed;
+        camera.target.y += speed * 0.5f;
     }
 
     if (IsKeyDown(KEY_D)) {
-        camera.target.x += speed;
+        camera.target.x += speed * 0.5f;
     }
 
     if (IsKeyDown(KEY_W)) {
-        camera.target.y -= speed;
+        camera.target.y -= speed * 0.5f;
     }
 }
 

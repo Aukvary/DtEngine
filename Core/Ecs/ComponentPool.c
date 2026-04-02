@@ -14,19 +14,7 @@ static void component_pool_remove(void* pool, DtEntity entity);
 static void component_pool_resize(void* pool, u16 new_size);
 static void component_pool_free(void* pool);
 
-//TODO: split decl def
-static int get_hash(const char* name) {
-    int hash = 2147483647;
-    while (*name) {
-        hash ^= *name++;
-        hash *= 314159;
-    }
-    return hash;
-}
-
-DtEcsPool* dt_component_pool_new(const DtEcsManager* manager, const char* name,
-                                 const u16 item_size, const DtResetItemHandler reset_handler,
-                                 const DtCopyItemHandler copy_handler) {
+DtEcsPool* dt_component_pool_new(const DtEcsManager* manager, const char* name, const u16 size) {
     DtComponentPool* pool = DT_MALLOC(sizeof(DtComponentPool));
     const DtComponentData* component_data = dt_component_get_data_by_name(name);
 
@@ -53,9 +41,9 @@ DtEcsPool* dt_component_pool_new(const DtEcsManager* manager, const char* name,
                 .free = component_pool_free,
             },
 
-        .entities = dt_entity_container_new(item_size, manager->cfg_dense_size,
-                                            manager->sparse_size, manager->recycled_size,
-                                            reset_handler, copy_handler),
+        .entities = dt_entity_container_new(size, manager->cfg_dense_size, manager->sparse_size,
+                                            manager->recycled_size, component_data->reset,
+                                            component_data->copy, component_data->init),
     };
 
     pool->pool.iterator = pool->entities.entities_iterator;
@@ -67,9 +55,6 @@ DtEcsPool* dt_component_pool_new(const DtEcsManager* manager, const char* name,
 static void component_pool_add(void* pool, DtEntity entity, const void* data) {
     DtComponentPool* component_pool = pool;
     dt_entity_container_add(&component_pool->entities, entity, data);
-    if (component_pool->component_data->init) {
-        component_pool->component_data->init(component_pool_get_item(pool, entity));
-    }
 }
 
 static void* component_pool_get_item(const void* pool, DtEntity entity) {

@@ -24,17 +24,21 @@ typedef u16 DtEntity;
 /**
  * @brief Указатель на функцию для сброса элемента в EntityContainer
  * @param data Указатель на данные
- * @param size Размер данных
  */
-typedef void (*DtResetItemHandler)(void* data, size_t size);
+typedef void (*DtResetItemHandler)(void* data);
+
+/**
+ * @brief Указатель на функцию для сброса элемента в EntityContainer
+ * @param data Указатель на данные
+ */
+typedef void (*DtInitItemHandler)(void* data);
 
 /**
  * @brief Указатель на функцию для копирования элемента в EntityContainer
  * @param dst Указатель на назначение
  * @param src Указатель на источник
- * @param size Размер данных
  */
-typedef void (*DtCopyItemHandler)(void* dst, const void* src, size_t size);
+typedef void (*DtCopyItemHandler)(void* dst, const void* src);
 
 /**
  * @brief Основной обработчик ECS
@@ -59,9 +63,9 @@ typedef struct DtComponentData {
     u16 id;
     u64 hash;
 
-    void (*reset)(void*);
-    void (*init)(void*);
-    void (*copy)(void*, const void*);
+    DtResetItemHandler reset;
+    DtInitItemHandler init;
+    DtCopyItemHandler copy;
 
     u16 field_count;
     char** field_names;
@@ -167,12 +171,13 @@ typedef struct {
     DtEntity entities_iterator_ptr;
 
     DtResetItemHandler auto_reset;
+    DtInitItemHandler auto_init;
     DtCopyItemHandler auto_copy;
 } DtEntityContainer;
 
 DtEntityContainer dt_entity_container_new(u32 item_size, DtEntity dense_size, DtEntity sparse_size,
-                                          DtEntity recycle_size, DtResetItemHandler auto_reset,
-                                          DtCopyItemHandler auto_copy);
+                                          DtEntity recycle_size, DtResetItemHandler reset,
+                                          DtCopyItemHandler copy, DtInitItemHandler init);
 void dt_entity_container_add(DtEntityContainer* container, DtEntity entity, const void* data);
 int dt_entity_container_has(const DtEntityContainer* container, DtEntity entity);
 void* dt_entity_container_get(const DtEntityContainer* container, DtEntity entity);
@@ -263,27 +268,12 @@ typedef struct {
 } DtTagPool;
 
 /*=============================================================================
- *                          Макросы для создания пулов
- *============================================================================*/
-
-/**
- * @brief Создает новый пул ECS
- * @param T Тип пула
- * @param manager ECS менеджер, содержащий пул
- * @return Новый пул ECS
- */
-#define DT_ECS_POOL_NEW(T, manager) ecs_pool_new(manager, #T, sizeof(T))
-#define DT_COMPONENT_POOL_NEW(T, manager, reset, copy)                                             \
-    dt_component_pool_new(manager, #T, sizeof(T), reset, copy)
-
-/*=============================================================================
  *                         Функции для работы с пулами
  *============================================================================*/
 
 DtEcsPool* dt_ecs_pool_new(const DtEcsManager* manager, const char* name, u16 size);
 DtEcsPool* dt_ecs_pool_new_by_name(const DtEcsManager* manager, const char* name);
-DtEcsPool* dt_component_pool_new(const DtEcsManager* manager, const char* name, u16 size,
-                                 DtResetItemHandler reset_handler, DtCopyItemHandler copy_handler);
+DtEcsPool* dt_component_pool_new(const DtEcsManager* manager, const char* name, u16 size);
 DtEcsPool* dt_tag_pool_new(const DtEcsManager* manager, const char* name);
 
 void dt_ecs_pool_add(DtEcsPool* pool, DtEntity entity, const void* data);

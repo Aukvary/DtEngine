@@ -4,6 +4,11 @@
 #include "DtAllocators.h"
 #include "DtEcs.h"
 
+typedef struct {
+    void* data;
+    size_t size;
+} UndefType;
+
 static void entity_info_children_start(void* data);
 static void* entity_info_children_current(void* data);
 static bool entity_info_children_has_current(void* data);
@@ -19,8 +24,8 @@ static void* entity_container_entities_current(void* data);
 static bool entity_container_entities_has_current(void* data);
 static void entity_container_entities_next(void* data);
 
-static void default_entity_item_reset(void* data, size_t);
-static void default_entity_item_copy(void* dst, const void* src, size_t);
+static void default_entity_item_reset(void* data);
+static void default_entity_item_copy(void* dst, const void* src);
 
 DtEntityInfo dt_entity_info_new(DtEcsManager* manager, const DtEntity id, u16 component_count,
                                 const DtEntity children_size) {
@@ -243,8 +248,9 @@ static void entity_info_children_next(void* data) {
 
 DtEntityContainer dt_entity_container_new(const u32 item_size, const DtEntity dense_size,
                                           const DtEntity sparse_size, const DtEntity recycle_size,
-                                          const DtResetItemHandler auto_reset,
-                                          const DtCopyItemHandler auto_copy) {
+                                          const DtResetItemHandler reset,
+                                          const DtCopyItemHandler copy,
+                                          const DtResetItemHandler init) {
     DtEntityContainer ec = {
         .entities = DT_CALLOC(dense_size, sizeof(DtEntity)),
         .dense_items = DT_CALLOC(dense_size, item_size),
@@ -259,8 +265,9 @@ DtEntityContainer dt_entity_container_new(const u32 item_size, const DtEntity de
         .recycle_ptr = 0,
         .recycle_size = recycle_size,
 
-        .auto_reset = auto_reset ? auto_reset : default_entity_item_reset,
-        .auto_copy = auto_copy ? auto_copy : default_entity_item_copy,
+        .auto_reset = reset,
+        .auto_init = init,
+        .auto_copy = copy,
 
         .items_iterator =
             (DtIterator) {
@@ -326,9 +333,32 @@ void dt_entity_container_add(DtEntityContainer* container, const DtEntity entity
     void* target = (u8*) container->dense_items + e * container->item_size;
 
     if (data) {
-        container->auto_copy(target, data, container->item_size);
+        if (container->auto_copy) {
+            container->auto_copy(target, data);
+        } else {
+            default_entity_item_copy(
+                &(UndefType) {
+                    .data = target,
+                    .size = container->item_size,
+                },
+                &(UndefType) {
+                    .data = (void*) data,
+                    .size = container->item_size,
+                });
+        }
     } else {
-        container->auto_reset(target, container->item_size);
+        if (container->auto_reset) {
+            container->auto_reset(target);
+        } else {
+            default_entity_item_reset(&(UndefType) {
+                .data = target,
+                .size = container->item_size,
+            });
+        }
+    }
+
+    if (container->auto_init) {
+        container->auto_init(target);
     }
 
     container->entities[e] = entity;
@@ -352,7 +382,7 @@ void dt_entity_container_remove(DtEntityContainer* container, const DtEntity ent
             (u8*) container->dense_items +
             container->sparse_entities[container->count - 1] * container->item_size;
 
-        container->auto_copy(entity_data, last_entity, container->item_size);
+        container->auto_copy(entity_data, last_entity);
 
         const DtEntity last_id = container->entities[container->count - 1];
         container->sparse_entities[last_id] = container->sparse_entities[entity];
@@ -398,9 +428,18 @@ void dt_entity_container_reset(DtEntityContainer* container, const DtEntity enti
     if (!dt_entity_container_has(container, entity))
         return;
 
-    container->auto_reset((u8*) container->dense_items +
-                              container->sparse_entities[entity] * container->item_size,
-                          container->item_size);
+    void* data =
+        (u8*) container->dense_items + container->sparse_entities[entity] * container->item_size;
+
+    if (container->auto_reset) {
+        container->auto_reset(data);
+    } else {
+        default_entity_item_reset(&(UndefType) {data, container->item_size});
+    }
+
+    if (container->auto_init) {
+        container->auto_init(data);
+    }
 }
 
 void dt_entity_container_copy(DtEntityContainer* container, const DtEntity dst,
@@ -408,12 +447,29 @@ void dt_entity_container_copy(DtEntityContainer* container, const DtEntity dst,
     if (!dt_entity_container_has(container, src))
         return;
 
-    if (dt_entity_container_has(container, dst))
-        container->auto_copy(
-            (u8*) container->dense_items + container->sparse_entities[dst] * container->item_size,
-            (u8*) container->dense_items + container->sparse_entities[src] * container->item_size,
-            container->item_size);
-    else
+    if (dt_entity_container_has(container, dst)) {
+        void* dst_ptr =
+            (u8*) container->dense_items + container->sparse_entities[dst] * container->item_size;
+
+        void* src_ptr =
+            (u8*) container->dense_items + container->sparse_entities[src] * container->item_size;
+
+        if (container->auto_copy)
+            container->auto_copy(dst_ptr, src_ptr);
+        else
+            default_entity_item_copy(
+                &(UndefType) {
+                    .size = container->item_size,
+                    .data = dst_ptr,
+                },
+                &(UndefType) {
+                    .size = container->item_size,
+                    .data = src_ptr,
+                });
+        if (container->auto_init) {
+            container->auto_init(dst_ptr);
+        }
+    } else
         dt_entity_container_add(container, dst,
                                 (u8*) container->dense_items +
                                     container->sparse_entities[src] * container->item_size);
@@ -430,8 +486,17 @@ void dt_entity_container_resize(DtEntityContainer* container, u16 new_size) {
     container->sparse_entities = tmp;
 }
 
-static void default_entity_item_reset(void* data, const size_t size) {
-    memset(data, 0, size);
+static void default_entity_item_reset(void* data) {
+    UndefType* type = data;
+    memset(type->data, 0, type->size);
+}
+
+static void default_entity_item_copy(void* dst, const void* src) {
+    UndefType* dst_data = dst;
+    const UndefType* src_data = src;
+
+
+    memcpy(dst_data->data, src_data->data, src_data->size);
 }
 
 void dt_entity_container_free(DtEntityContainer* container) {
@@ -439,10 +504,6 @@ void dt_entity_container_free(DtEntityContainer* container) {
     free(container->entities);
     free(container->sparse_entities);
     free(container->recycle_entities);
-}
-
-static void default_entity_item_copy(void* dst, const void* src, const size_t size) {
-    memcpy(dst, src, size);
 }
 
 static void entity_container_items_start(void* data) {

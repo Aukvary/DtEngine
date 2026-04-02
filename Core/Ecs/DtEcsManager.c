@@ -146,7 +146,7 @@ static DtEcsFilter* filter_new(DtEcsManager* manager, const DtEcsMask mask) {
         .manager = manager,
         .entities =
             dt_entity_container_new(sizeof(DtEntity), manager->cfg_dense_size, manager->sparse_size,
-                                    manager->cfg_recycle_size, NULL, NULL),
+                                    manager->cfg_recycle_size, NULL, NULL, NULL),
         .mask = mask,
     };
 

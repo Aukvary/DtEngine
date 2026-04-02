@@ -3,7 +3,7 @@
 extern DtEFuncTable func_table;
 
 static void sprite_init(void* data);
-DT_REGISTER_COMPONENT(Sprite, sprite_init, SPRITE)
+DT_REGISTER_COMPONENT(Sprite, SPRITE, DT_INIT_ATTR(sprite_init))
 
 static void sprite_init(void* data) {
     Sprite* sprite = data;

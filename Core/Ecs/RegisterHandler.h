@@ -7,17 +7,17 @@
 #include "ExecuteOrder.h"
 #include "scheduler/FileHandle.h"
 
-#define DT_RESET_HANDLER_NAME "dt_reset"
-#define DT_RESET_HANDLER(func)                                                                     \
-    (DtAttributeData) { .attribute_name = DT_RESET_HANDLER_NAME, .data = func, }
+#define DT_RESET_ATTR_TAG "dt_reset"
+#define DT_RESET_ATTR(func)                                                                        \
+    (DtAttributeData) { .attribute_name = DT_RESET_ATTR_TAG, .data = func, }
 
-#define DT_INIT_HANDLER_NAME "dt_init"
-#define DT_INIT_HANDLER(func)                                                                      \
-    (DtAttributeData) { .attribute_name = DT_INIT_HANDLER_NAME, .data = func, }
+#define DT_INIT_ATTR_TAG "dt_init"
+#define DT_INIT_ATTR(func)                                                                         \
+    (DtAttributeData) { .attribute_name = DT_INIT_ATTR_TAG, .data = func, }
 
-#define DT_COPY_HANDLER_NAME "dt_copy"
-#define DT_COPY_HANDLER(func)                                                                      \
-    (DtAttributeData) { .attribute_name = DT_COPY_HANDLER_NAME, .data = func, }
+#define DT_COPY_ATTR_TAG "dt_copy"
+#define DT_COPY_ATTR(func)                                                                         \
+    (DtAttributeData) { .attribute_name = DT_COPY_ATTR_TAG, .data = func, }
 
 #define DT_FIELD_DECL(type, name, component_name, ...) type name;
 #define DT_FIELD_COUNT(type, name, component_name, ...) +1
@@ -42,13 +42,13 @@
     static DtAttributeData component_name##_attrs[] = {__VA_ARGS__};                               \
                                                                                                    \
     static DtComponentData local_##component_name##_data;                                          \
-    static                                                                                         \
-        __attribute__((constructor(DT_ORDER_REGISTER_COUNT))) void component_name##_add_count() {  \
+    static __attribute__((constructor(DT_ORDER_REGISTER_COUNT))) void                              \
+    component_name##_add_count() {                                                                 \
         dt_component_increment_count();                                                            \
     }                                                                                              \
                                                                                                    \
-    static __attribute__((                                                                         \
-        constructor(DT_ORDER_REGISTER))) void component_name##_register_component(void) {          \
+    static __attribute__((constructor(DT_ORDER_REGISTER))) void                                    \
+    component_name##_register_component(void) {                                                    \
         local_##component_name##_data = (DtComponentData) {                                        \
             .name = #component_name,                                                               \
             .attributes = component_name##_attrs,                                                  \
@@ -64,7 +64,7 @@
     DtComponentData component_name##_data() { return local_##component_name##_data; }
 
 // TODO: comments
-#define DT_REGISTER_COMPONENT(component_name, default_func, fields, ...)                           \
+#define DT_REGISTER_COMPONENT(component_name, fields, ...)                                         \
     static DtAttributeData component_name##_attrs[] = {__VA_ARGS__};                               \
                                                                                                    \
     static u16 component_name##_attrs_count =                                                      \
@@ -83,16 +83,15 @@
                                                                                                    \
     static DtComponentData local_##component_name##_data;                                          \
                                                                                                    \
-    static                                                                                         \
-        __attribute__((constructor(DT_ORDER_REGISTER_COUNT))) void component_name##_add_count() {  \
+    static __attribute__((constructor(DT_ORDER_REGISTER_COUNT))) void                              \
+    component_name##_add_count() {                                                                 \
         dt_component_increment_count();                                                            \
     }                                                                                              \
                                                                                                    \
-    static __attribute__((                                                                         \
-        constructor(DT_ORDER_REGISTER))) void component_name##_register_component(void) {          \
+    static __attribute__((constructor(DT_ORDER_REGISTER))) void                                    \
+    component_name##_register_component(void) {                                                    \
         local_##component_name##_data = (DtComponentData) {                                        \
             .name = #component_name,                                                               \
-            .init = default_func,                                                                  \
             .attributes = component_name##_attrs,                                                  \
             .attribute_count = component_name##_attrs_count,                                       \
             .field_count = 0 fields(DT_FIELD_COUNT, component_name),                               \
@@ -163,8 +162,8 @@ typedef struct {
     static __attribute__((constructor(DT_ORDER_REGISTER_COUNT))) void system_name##_add_count() {  \
         dt_update_increment_count();                                                               \
     }                                                                                              \
-    static __attribute__((                                                                         \
-        constructor(DT_ORDER_REGISTER))) void dt_##system_name##_register_update(void) {           \
+    static __attribute__((constructor(DT_ORDER_REGISTER))) void                                    \
+    dt_##system_name##_register_update(void) {                                                     \
         local_##system_name##_data = (DtUpdateData) {                                              \
             .name = #system_name,                                                                  \
             .new = new_func,                                                                       \

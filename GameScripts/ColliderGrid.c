@@ -3,4 +3,4 @@
 
 void colliderGridInit(void* data);
 
-DT_REGISTER_COMPONENT(ColliderGrid, colliderGridInit,  COLLIDER_GRID)
+DT_REGISTER_COMPONENT(ColliderGrid, COLLIDER_GRID)
